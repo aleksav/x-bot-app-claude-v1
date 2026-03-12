@@ -9,6 +9,7 @@ import { notFoundHandler } from './middleware/notFound.js';
 import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import botRoutes from './routes/botRoutes.js';
+import xOAuthRoutes from './routes/xOAuthRoutes.js';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(requestLogger);
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/bots', botRoutes);
+app.use('/api/auth/x', xOAuthRoutes);
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);
