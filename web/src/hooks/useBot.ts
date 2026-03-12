@@ -14,6 +14,7 @@ type Bot = {
   preferredHoursEnd: number;
   active: boolean;
   createdAt: string;
+  updatedAt: string;
 };
 
 type BotListResponse = {
@@ -89,7 +90,25 @@ export function useUpdateBot() {
       const response = await apiClient.patch<BotResponse>(`/bots/${id}`, input);
       return response.data.data;
     },
-    onSuccess: () => {
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.bots.list });
+      const previous = queryClient.getQueryData<BotListResponse>(queryKeys.bots.list);
+      if (previous) {
+        queryClient.setQueryData<BotListResponse>(queryKeys.bots.list, {
+          ...previous,
+          data: previous.data.map((b) =>
+            b.id === variables.id ? { ...b, ...variables, updatedAt: new Date().toISOString() } : b,
+          ),
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.bots.list, context.previous);
+      }
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bots.list });
     },
   });
