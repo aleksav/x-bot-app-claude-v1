@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -12,15 +12,15 @@ async function main() {
   // Create users from two allowed domains
   const user1 = await prisma.user.create({
     data: {
-      email: "alice@thestartupfactory.tech",
-      name: "Alice Johnson",
+      email: 'alice@thestartupfactory.tech',
+      name: 'Alice Johnson',
     },
   });
 
   const user2 = await prisma.user.create({
     data: {
-      email: "bob@ehe.ai",
-      name: "Bob Smith",
+      email: 'bob@ehe.ai',
+      name: 'Bob Smith',
     },
   });
 
@@ -28,12 +28,12 @@ async function main() {
   const bot1 = await prisma.bot.create({
     data: {
       userId: user1.id,
-      xAccessToken: "fake-access-token-1",
-      xAccessSecret: "fake-access-secret-1",
-      xAccountHandle: "@alice_bot",
+      xAccessToken: 'fake-access-token-1',
+      xAccessSecret: 'fake-access-secret-1',
+      xAccountHandle: '@alice_bot',
       prompt:
-        "You are a friendly tech commentator. Write short, insightful tweets about software engineering trends.",
-      postMode: "auto",
+        'You are a friendly tech commentator. Write short, insightful tweets about software engineering trends.',
+      postMode: 'auto',
       postsPerDay: 4,
       minIntervalHours: 3,
       preferredHoursStart: 8,
@@ -45,12 +45,12 @@ async function main() {
   const bot2 = await prisma.bot.create({
     data: {
       userId: user2.id,
-      xAccessToken: "fake-access-token-2",
-      xAccessSecret: "fake-access-secret-2",
-      xAccountHandle: "@bob_bot",
+      xAccessToken: 'fake-access-token-2',
+      xAccessSecret: 'fake-access-secret-2',
+      xAccountHandle: '@bob_bot',
       prompt:
-        "You are a witty startup founder. Write engaging tweets about entrepreneurship and startup culture.",
-      postMode: "manual",
+        'You are a witty startup founder. Write engaging tweets about entrepreneurship and startup culture.',
+      postMode: 'manual',
       postsPerDay: 2,
       minIntervalHours: 4,
       preferredHoursStart: 9,
@@ -68,7 +68,7 @@ async function main() {
   const job1 = await prisma.job.create({
     data: {
       botId: bot1.id,
-      status: "completed",
+      status: 'completed',
       scheduledAt: oneHourAgo,
       startedAt: oneHourAgo,
       completedAt: new Date(oneHourAgo.getTime() + 30 * 1000),
@@ -78,7 +78,7 @@ async function main() {
   const job2 = await prisma.job.create({
     data: {
       botId: bot1.id,
-      status: "pending",
+      status: 'pending',
       scheduledAt: oneHourFromNow,
     },
   });
@@ -86,7 +86,7 @@ async function main() {
   const job3 = await prisma.job.create({
     data: {
       botId: bot2.id,
-      status: "pending",
+      status: 'pending',
       scheduledAt: twoHoursFromNow,
     },
   });
@@ -97,8 +97,8 @@ async function main() {
       botId: bot1.id,
       jobId: job1.id,
       content:
-        "TypeScript 6.0 just dropped and the type inference improvements are mind-blowing. The future of full-stack type safety is here. 🚀",
-      status: "published",
+        'TypeScript 6.0 just dropped and the type inference improvements are mind-blowing. The future of full-stack type safety is here. 🚀',
+      status: 'published',
       rating: 4,
       publishedAt: new Date(oneHourAgo.getTime() + 30 * 1000),
     },
@@ -108,9 +108,8 @@ async function main() {
     data: {
       botId: bot1.id,
       jobId: job2.id,
-      content:
-        "Hot take: most microservices should have been monoliths. Fight me.",
-      status: "draft",
+      content: 'Hot take: most microservices should have been monoliths. Fight me.',
+      status: 'draft',
       scheduledAt: oneHourFromNow,
     },
   });
@@ -120,8 +119,8 @@ async function main() {
       botId: bot1.id,
       jobId: job2.id,
       content:
-        "The best code review feedback is the one that teaches something new, not just catches bugs.",
-      status: "scheduled",
+        'The best code review feedback is the one that teaches something new, not just catches bugs.',
+      status: 'scheduled',
       rating: 5,
       scheduledAt: oneHourFromNow,
     },
@@ -133,12 +132,12 @@ async function main() {
       jobId: job3.id,
       content:
         "Lesson #47 of startup life: your MVP should be embarrassingly simple. If you're not embarrassed, you launched too late.",
-      status: "draft",
+      status: 'draft',
       scheduledAt: twoHoursFromNow,
     },
   });
 
-  console.log("Seed data created successfully:");
+  console.log('Seed data created successfully:');
   console.log(`  Users: ${user1.email}, ${user2.email}`);
   console.log(`  Bots: ${bot1.xAccountHandle}, ${bot2.xAccountHandle}`);
   console.log(`  Jobs: ${3} created`);
@@ -147,7 +146,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error("Seed failed:", e);
+    console.error('Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {

@@ -5,6 +5,7 @@
 A web platform that allows users from approved domains to connect their X (Twitter) account and have it automated by an AI agent. The agent researches topics, drafts tweets, and publishes them on a user-defined schedule. Users retain full editorial control at all times.
 
 Access is restricted to users with email addresses from the following domains:
+
 - `thestartupfactory.tech`
 - `ehe.ai`
 
@@ -14,44 +15,44 @@ Access is restricted to users with email addresses from the following domains:
 
 ### `users`
 
-| Field | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | |
-| `email` | string | Must be from an approved domain |
-| `name` | string | |
-| `created_at` | timestamp | |
+| Field        | Type      | Notes                           |
+| ------------ | --------- | ------------------------------- |
+| `id`         | uuid PK   |                                 |
+| `email`      | string    | Must be from an approved domain |
+| `name`       | string    |                                 |
+| `created_at` | timestamp |                                 |
 
 ### `bots`
 
-| Field | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | |
-| `user_id` | uuid FK | References `users` |
-| `x_access_token` | string | OAuth access token |
-| `x_access_secret` | string | OAuth access secret |
-| `x_account_handle` | string | e.g. `@handle` |
-| `prompt` | text | Topics, tone, and style instructions for the agent |
-| `post_mode` | string | `auto` or `manual` |
-| `posts_per_day` | int | Target number of posts per day, range 1–15 |
-| `min_interval_hours` | int | Minimum gap between posts in hours, range 1–15 |
-| `preferred_hours_start` | int | Start of preferred posting window, 0–23 |
-| `preferred_hours_end` | int | End of preferred posting window, 1–24. Set to 0 and 24 respectively for no preference |
-| `active` | bool | Whether the bot is running |
-| `created_at` | timestamp | |
+| Field                   | Type      | Notes                                                                                 |
+| ----------------------- | --------- | ------------------------------------------------------------------------------------- |
+| `id`                    | uuid PK   |                                                                                       |
+| `user_id`               | uuid FK   | References `users`                                                                    |
+| `x_access_token`        | string    | OAuth access token                                                                    |
+| `x_access_secret`       | string    | OAuth access secret                                                                   |
+| `x_account_handle`      | string    | e.g. `@handle`                                                                        |
+| `prompt`                | text      | Topics, tone, and style instructions for the agent                                    |
+| `post_mode`             | string    | `auto` or `manual`                                                                    |
+| `posts_per_day`         | int       | Target number of posts per day, range 1–15                                            |
+| `min_interval_hours`    | int       | Minimum gap between posts in hours, range 1–15                                        |
+| `preferred_hours_start` | int       | Start of preferred posting window, 0–23                                               |
+| `preferred_hours_end`   | int       | End of preferred posting window, 1–24. Set to 0 and 24 respectively for no preference |
+| `active`                | bool      | Whether the bot is running                                                            |
+| `created_at`            | timestamp |                                                                                       |
 
 ### `posts`
 
-| Field | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | |
-| `bot_id` | uuid FK | References `bots` |
-| `job_id` | uuid FK | References the job that generated this post |
-| `content` | text | Tweet content (editable by user) |
-| `status` | string | `draft`, `scheduled`, `published`, `discarded` |
-| `rating` | int | Nullable, 1–5 stars. User-assigned on any non-discarded post |
-| `scheduled_at` | timestamp | When to publish (set on scheduling) |
-| `published_at` | timestamp | When actually published to X |
-| `created_at` | timestamp | |
+| Field          | Type      | Notes                                                        |
+| -------------- | --------- | ------------------------------------------------------------ |
+| `id`           | uuid PK   |                                                              |
+| `bot_id`       | uuid FK   | References `bots`                                            |
+| `job_id`       | uuid FK   | References the job that generated this post                  |
+| `content`      | text      | Tweet content (editable by user)                             |
+| `status`       | string    | `draft`, `scheduled`, `published`, `discarded`               |
+| `rating`       | int       | Nullable, 1–5 stars. User-assigned on any non-discarded post |
+| `scheduled_at` | timestamp | When to publish (set on scheduling)                          |
+| `published_at` | timestamp | When actually published to X                                 |
+| `created_at`   | timestamp |                                                              |
 
 **Status flow:** `draft → scheduled → published` or `draft → discarded`
 
@@ -61,17 +62,17 @@ In `auto` mode the worker moves the post from `draft` to `scheduled` immediately
 
 ### `jobs`
 
-| Field | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | |
-| `bot_id` | uuid FK | References `bots` |
-| `status` | string | `pending`, `locked`, `completed`, `failed` |
-| `lock_token` | uuid | Set atomically when a worker claims the job |
-| `locked_at` | timestamp | Used to detect stale locks |
-| `scheduled_at` | timestamp | When this job should run |
-| `started_at` | timestamp | |
-| `completed_at` | timestamp | |
-| `created_at` | timestamp | |
+| Field          | Type      | Notes                                       |
+| -------------- | --------- | ------------------------------------------- |
+| `id`           | uuid PK   |                                             |
+| `bot_id`       | uuid FK   | References `bots`                           |
+| `status`       | string    | `pending`, `locked`, `completed`, `failed`  |
+| `lock_token`   | uuid      | Set atomically when a worker claims the job |
+| `locked_at`    | timestamp | Used to detect stale locks                  |
+| `scheduled_at` | timestamp | When this job should run                    |
+| `started_at`   | timestamp |                                             |
+| `completed_at` | timestamp |                                             |
+| `created_at`   | timestamp |                                             |
 
 ---
 

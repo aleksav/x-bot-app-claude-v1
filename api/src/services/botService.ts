@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma.js';
 import { botRepository } from '../repositories/botRepository.js';
 import { jobRepository } from '../repositories/jobRepository.js';
@@ -31,7 +32,7 @@ type UpdateBotInput = {
 
 export const botService = {
   async createBot(input: CreateBotInput) {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const bot = await tx.bot.create({
         data: {
           ...input,
