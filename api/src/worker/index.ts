@@ -1,11 +1,12 @@
 import * as jobWorker from './jobWorker.js';
 import * as staleLockRecovery from './staleLockRecovery.js';
+import * as postPublisher from './postPublisher.js';
 
 function shutdown(): void {
   console.log('[worker] Shutting down gracefully...');
   jobWorker.stop();
   staleLockRecovery.stop();
-  // Post publisher placeholder — will be added later
+  postPublisher.stop();
   process.exit(0);
 }
 
@@ -16,6 +17,6 @@ console.log('[worker] Starting worker processes...');
 
 jobWorker.start();
 staleLockRecovery.start();
-// Post publisher placeholder — will start here when implemented
+postPublisher.start();
 
 console.log('[worker] All worker processes started');
