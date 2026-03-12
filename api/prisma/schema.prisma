@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  bots Bot[]
+}
+
+model Bot {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @db.Uuid
+  xAccessToken        String
+  xAccessSecret       String
+  xAccountHandle      String
+  prompt              String   @db.Text
+  postMode            String   @default("manual")
+  postsPerDay         Int      @default(3)
+  minIntervalHours    Int      @default(2)
+  preferredHoursStart Int      @default(0)
+  preferredHoursEnd   Int      @default(24)
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id])
+  posts Post[]
+  jobs  Job[]
+}
+
+model Post {
+  id          String    @id @default(uuid()) @db.Uuid
+  botId       String    @db.Uuid
+  jobId       String    @db.Uuid
+  content     String    @db.Text
+  status      String    @default("draft")
+  rating      Int?
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  bot Bot @relation(fields: [botId], references: [id])
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([botId, status])
+  @@index([status, scheduledAt])
+}
+
+model Job {
+  id          String    @id @default(uuid()) @db.Uuid
+  botId       String    @db.Uuid
+  status      String    @default("pending")
+  lockToken   String?   @db.Uuid
+  lockedAt    DateTime?
+  scheduledAt DateTime
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  bot   Bot    @relation(fields: [botId], references: [id])
+  posts Post[]
+
+  @@index([status, scheduledAt])
+  @@index([status, lockedAt])
+}
