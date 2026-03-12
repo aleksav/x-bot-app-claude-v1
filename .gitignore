@@ -8,3 +8,5 @@ dist/
 coverage/
 .turbo/
 .claude/
+web/playwright-report/
+web/test-results/
