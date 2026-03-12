@@ -1,18 +1,22 @@
 import { useState } from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
+import Skeleton from '@mui/material/Skeleton';
+import Snackbar from '@mui/material/Snackbar';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import Skeleton from '@mui/material/Skeleton';
 import AppHeader from '../components/AppHeader';
 import BotSetupForm from '../components/BotSetupForm';
 import { useBot, useUpdateBot } from '../hooks/useBot';
@@ -41,20 +45,64 @@ function StatCard({ title, value }: { title: string; value: string | number }) {
   );
 }
 
+type SnackbarState = {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+};
+
 export default function DashboardPage() {
   const { bot, isLoading } = useBot();
   const updateBot = useUpdateBot();
   const [editOpen, setEditOpen] = useState(false);
   const [connectLoading, setConnectLoading] = useState(false);
+  const [toggleConfirmOpen, setToggleConfirmOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const navigate = useNavigate();
 
   const { data: stats, isLoading: statsLoading } = useStats(bot?.id);
   const { data: recentPostsData, isLoading: recentPostsLoading } = usePosts(undefined, 1, 5);
   const recentPosts = recentPostsData?.data ?? [];
 
-  const handleToggleActive = () => {
+  const showSnackbar = (message: string, severity: 'success' | 'error') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleToggleClick = () => {
     if (!bot) return;
-    updateBot.mutate({ id: bot.id, active: !bot.active });
+    setToggleConfirmOpen(true);
+  };
+
+  const handleToggleConfirm = () => {
+    if (!bot) return;
+    const newActive = !bot.active;
+    setToggleConfirmOpen(false);
+    updateBot.mutate(
+      { id: bot.id, active: newActive },
+      {
+        onSuccess: () => {
+          showSnackbar(
+            newActive ? 'Bot resumed successfully' : 'Bot paused successfully',
+            'success',
+          );
+        },
+        onError: () => {
+          showSnackbar('Failed to update bot', 'error');
+        },
+      },
+    );
+  };
+
+  const handleToggleCancel = () => {
+    setToggleConfirmOpen(false);
   };
 
   const handleConnectX = async () => {
@@ -68,6 +116,29 @@ export default function DashboardPage() {
     } catch {
       setConnectLoading(false);
     }
+  };
+
+  const handleConfigSave = (values: {
+    prompt: string;
+    postMode: 'auto' | 'manual';
+    postsPerDay: number;
+    minIntervalHours: number;
+    preferredHoursStart: number;
+    preferredHoursEnd: number;
+  }) => {
+    if (!bot) return;
+    updateBot.mutate(
+      { id: bot.id, ...values },
+      {
+        onSuccess: () => {
+          setEditOpen(false);
+          showSnackbar('Bot configuration updated', 'success');
+        },
+        onError: () => {
+          showSnackbar('Failed to update bot', 'error');
+        },
+      },
+    );
   };
 
   if (isLoading) {
@@ -97,7 +168,7 @@ export default function DashboardPage() {
           >
             <Typography variant="h4">Set up your bot</Typography>
             <Typography variant="body1" color="text.secondary">
-              You don't have a bot yet. Connect your X account to get started.
+              You don&apos;t have a bot yet. Connect your X account to get started.
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Bot creation requires connecting your X account first via the API.
@@ -107,6 +178,8 @@ export default function DashboardPage() {
       </>
     );
   }
+
+  const lastUpdated = bot.updatedAt ? new Date(bot.updatedAt).toLocaleString() : null;
 
   return (
     <>
@@ -137,7 +210,7 @@ export default function DashboardPage() {
               </Box>
               <Switch
                 checked={bot.active}
-                onChange={handleToggleActive}
+                onChange={handleToggleClick}
                 disabled={updateBot.isPending}
               />
             </Box>
@@ -161,13 +234,22 @@ export default function DashboardPage() {
               >
                 Prompt: {bot.prompt}
               </Typography>
+              {lastUpdated && (
+                <Typography variant="caption" color="text.secondary">
+                  Last updated: {lastUpdated}
+                </Typography>
+              )}
             </Box>
 
             <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
               <Button variant="outlined" onClick={handleConnectX} disabled={connectLoading}>
                 {connectLoading ? 'Connecting...' : 'Connect X'}
               </Button>
-              <Button variant="outlined" onClick={() => setEditOpen(true)}>
+              <Button
+                variant="outlined"
+                onClick={() => setEditOpen(true)}
+                disabled={updateBot.isPending}
+              >
                 Edit Config
               </Button>
             </Box>
@@ -285,6 +367,29 @@ export default function DashboardPage() {
           </Button>
         </Box>
 
+        {/* Toggle confirmation dialog */}
+        <Dialog open={toggleConfirmOpen} onClose={handleToggleCancel}>
+          <DialogTitle>{bot.active ? 'Pause Bot' : 'Resume Bot'}</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              {bot.active
+                ? 'Are you sure you want to pause this bot? Workers will skip pending jobs.'
+                : 'Are you sure you want to resume this bot? Pending jobs will resume.'}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleToggleCancel}>Cancel</Button>
+            <Button
+              onClick={handleToggleConfirm}
+              variant="contained"
+              disabled={updateBot.isPending}
+            >
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit config dialog */}
         <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
           <DialogTitle>Edit Bot Configuration</DialogTitle>
           <DialogContent>
@@ -298,20 +403,30 @@ export default function DashboardPage() {
                   preferredHoursStart: bot.preferredHoursStart,
                   preferredHoursEnd: bot.preferredHoursEnd,
                 }}
-                onSubmit={(values) => {
-                  updateBot.mutate(
-                    { id: bot.id, ...values },
-                    {
-                      onSuccess: () => setEditOpen(false),
-                    },
-                  );
-                }}
+                onSubmit={handleConfigSave}
                 isLoading={updateBot.isPending}
                 submitLabel="Update"
               />
             </Box>
           </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditOpen(false)} disabled={updateBot.isPending}>
+              Cancel
+            </Button>
+          </DialogActions>
         </Dialog>
+
+        {/* Snackbar notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled">
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </>
   );
