@@ -6,7 +6,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import Paper from '@mui/material/Paper';
-import { useLoginMutation } from '../hooks/useAuth';
+import Link from '@mui/material/Link';
+import { useLoginMutation, useRegisterMutation } from '../hooks/useAuth';
+import { AxiosError } from 'axios';
 
 const ALLOWED_DOMAINS = ['thestartupfactory.tech', 'ehe.ai'];
 
@@ -22,10 +24,17 @@ function validateEmail(email: string): string | null {
 }
 
 export default function LoginPage() {
+  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [magicLinkUrl, setMagicLinkUrl] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const loginMutation = useLoginMutation();
+  const registerMutation = useRegisterMutation();
+
+  const isPending = loginMutation.isPending || registerMutation.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,12 +44,27 @@ export default function LoginPage() {
       return;
     }
     setEmailError(null);
-    setMagicLinkUrl(null);
-    loginMutation.mutate(email, {
-      onSuccess: (data) => {
-        setMagicLinkUrl(data.url);
-      },
-    });
+    setApiError(null);
+
+    const onError = (err: unknown) => {
+      if (err instanceof AxiosError && err.response?.data?.error) {
+        setApiError(err.response.data.error);
+      } else if (err instanceof Error) {
+        setApiError(err.message);
+      } else {
+        setApiError('An unexpected error occurred');
+      }
+    };
+
+    const onSuccess = () => {
+      window.location.href = '/dashboard';
+    };
+
+    if (isRegister) {
+      registerMutation.mutate({ email, password, name }, { onSuccess, onError });
+    } else {
+      loginMutation.mutate({ email, password }, { onSuccess, onError });
+    }
   };
 
   return (
@@ -59,7 +83,7 @@ export default function LoginPage() {
           X Bot Platform
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Sign in to manage your bots
+          {isRegister ? 'Create an account' : 'Sign in to manage your bots'}
         </Typography>
 
         <Paper sx={{ p: 4, width: '100%' }}>
@@ -68,6 +92,15 @@ export default function LoginPage() {
             onSubmit={handleSubmit}
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
+            {isRegister && (
+              <TextField
+                label="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                fullWidth
+                autoFocus
+              />
+            )}
             <TextField
               label="Email"
               type="email"
@@ -79,42 +112,39 @@ export default function LoginPage() {
               error={!!emailError}
               helperText={emailError}
               fullWidth
-              autoFocus
+              autoFocus={!isRegister}
             />
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loginMutation.isPending}
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               fullWidth
-            >
-              {loginMutation.isPending ? 'Sending...' : 'Send Magic Link'}
+            />
+            <Button type="submit" variant="contained" size="large" disabled={isPending} fullWidth>
+              {isPending ? 'Please wait...' : isRegister ? 'Register' : 'Login'}
             </Button>
           </Box>
 
-          {loginMutation.isError && (
+          {apiError && (
             <Alert severity="error" sx={{ mt: 2 }}>
-              {loginMutation.error instanceof Error
-                ? loginMutation.error.message
-                : 'Failed to send magic link'}
+              {apiError}
             </Alert>
           )}
 
-          {magicLinkUrl && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Magic link generated:
-              </Typography>
-              <Typography
-                variant="body2"
-                component="a"
-                href={magicLinkUrl}
-                sx={{ wordBreak: 'break-all' }}
-              >
-                {magicLinkUrl}
-              </Typography>
-            </Alert>
-          )}
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setApiError(null);
+                setEmailError(null);
+              }}
+            >
+              {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
+            </Link>
+          </Box>
         </Paper>
       </Box>
     </Container>

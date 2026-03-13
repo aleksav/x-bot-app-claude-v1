@@ -33,6 +33,9 @@ export default function AppHeader() {
               <Button color="inherit" component={Link} to="/posts">
                 Posts
               </Button>
+              <Button color="inherit" component={Link} to="/users">
+                Users
+              </Button>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Typography variant="body2">{user.email}</Typography>
