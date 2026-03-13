@@ -11,10 +11,6 @@ type AuthResponse = {
   data: User;
 };
 
-type MagicLinkResponse = {
-  data: { url: string };
-};
-
 export function useAuth() {
   const query = useQuery({
     queryKey: queryKeys.auth.me,
@@ -34,10 +30,29 @@ export function useAuth() {
 }
 
 export function useLoginMutation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async (email: string) => {
-      const response = await apiClient.post<MagicLinkResponse>('/auth/magic-link', { email });
-      return response.data.data;
+    mutationFn: async (input: { email: string; password: string }) => {
+      const response = await apiClient.post('/auth/login', input);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
+    },
+  });
+}
+
+export function useRegisterMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { email: string; password: string; name: string }) => {
+      const response = await apiClient.post('/auth/register', input);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
 }

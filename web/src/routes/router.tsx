@@ -8,9 +8,9 @@ import {
 import { QueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/apiClient';
 import LoginPage from '../pages/LoginPage';
-import VerifyPage from '../pages/VerifyPage';
 import DashboardPage from '../pages/DashboardPage';
 import PostsPage from '../pages/PostsPage';
+import UsersPage from '../pages/UsersPage';
 
 async function checkAuth(): Promise<boolean> {
   try {
@@ -29,12 +29,6 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
-});
-
-const verifyRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/auth/verify',
-  component: VerifyPage,
 });
 
 const dashboardRoute = createRoute({
@@ -61,6 +55,18 @@ const postsRoute = createRoute({
   component: PostsPage,
 });
 
+const usersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/users',
+  beforeLoad: async () => {
+    const authenticated = await checkAuth();
+    if (!authenticated) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  component: UsersPage,
+});
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
@@ -77,9 +83,9 @@ const indexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  verifyRoute,
   dashboardRoute,
   postsRoute,
+  usersRoute,
 ]);
 
 export function createAppRouter(_queryClient?: QueryClient) {
