@@ -13,6 +13,9 @@ import botRoutes from './routes/botRoutes.js';
 import xOAuthRoutes from './routes/xOAuthRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import * as jobWorker from './worker/jobWorker.js';
+import * as staleLockRecovery from './worker/staleLockRecovery.js';
+import * as postPublisher from './worker/postPublisher.js';
 
 const app = express();
 
@@ -46,6 +49,20 @@ app.use(errorHandler);
 // Start server
 app.listen(config.port, () => {
   console.log(`API server listening on port ${config.port}`);
+
+  // Start workers in-process (safe to run multiple instances via SKIP LOCKED)
+  jobWorker.start();
+  staleLockRecovery.start();
+  postPublisher.start();
+  console.log('Workers started in-process');
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  jobWorker.stop();
+  staleLockRecovery.stop();
+  postPublisher.stop();
+  process.exit(0);
 });
 
 export default app;
