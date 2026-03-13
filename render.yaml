@@ -32,26 +32,3 @@ services:
         sync: false
       - key: X_CONSUMER_SECRET
         sync: false
-
-  - type: worker
-    name: x-bot-worker
-    runtime: node
-    plan: free
-    rootDir: .
-    buildCommand: npm ci && npx prisma generate --schema=api/prisma/schema.prisma && npm run build --workspace=shared && npm run build --workspace=api
-    startCommand: cd api && npm run start:worker
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: x-bot-db
-          property: connectionString
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: X_CONSUMER_KEY
-        sync: false
-      - key: X_CONSUMER_SECRET
-        sync: false
-      - key: WORKER_POLL_INTERVAL_MS
-        value: '30000'
