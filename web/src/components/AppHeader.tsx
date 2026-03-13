@@ -33,6 +33,9 @@ export default function AppHeader() {
               <Button color="inherit" component={Link} to="/posts">
                 Posts
               </Button>
+              <Button color="inherit" component={Link} to="/jobs">
+                Jobs
+              </Button>
               <Button color="inherit" component={Link} to="/users">
                 Users
               </Button>
