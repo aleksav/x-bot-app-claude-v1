@@ -9,7 +9,7 @@ export const config = {
   },
   app: {
     version: process.env.APP_VERSION || '0.1.0',
-    baseUrl: process.env.APP_BASE_URL || 'http://localhost:3001',
+    baseUrl: process.env.API_BASE_URL || 'http://localhost:3001',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   },
   allowedDomains: ['thestartupfactory.tech', 'ehe.ai'],
