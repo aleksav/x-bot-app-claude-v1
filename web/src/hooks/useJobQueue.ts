@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/apiClient';
 import { queryKeys } from '../lib/queryKeys';
 
 export type JobQueueStats = {
-  jobCounts: { pending: number; locked: number; completed: number; failed: number };
+  jobCounts: { pending: number; locked: number; completed: number; failed: number; cancelled: number };
   postCounts: { draft: number; scheduled: number; published: number; discarded: number };
   recentJobs: Array<{
     id: string;
@@ -56,5 +56,17 @@ export function useJobQueue() {
       return response.data.data;
     },
     refetchInterval: 30000,
+  });
+}
+
+export function useCancelJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      await apiClient.post(`/jobs/${jobId}/cancel`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.stats });
+    },
   });
 }

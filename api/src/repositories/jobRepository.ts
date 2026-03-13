@@ -99,6 +99,19 @@ export const jobRepository = {
     });
   },
 
+  async cancel(jobId: string) {
+    return prisma.job.updateMany({
+      where: {
+        id: jobId,
+        status: { in: ['pending', 'locked'] },
+      },
+      data: {
+        status: 'cancelled',
+        completedAt: new Date(),
+      },
+    });
+  },
+
   async findStaleLockedJobs(staleMinutes = 10) {
     const cutoff = new Date(Date.now() - staleMinutes * 60 * 1000);
     return prisma.job.findMany({
