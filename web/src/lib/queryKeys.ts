@@ -14,4 +14,7 @@ export const queryKeys = {
   stats: {
     forBot: (botId: string) => ['stats', 'bot', botId] as const,
   },
+  jobs: {
+    stats: ['jobs', 'stats'] as const,
+  },
 } as const;
