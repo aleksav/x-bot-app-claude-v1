@@ -1,8 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/prisma.js';
+import { jobRepository } from '../repositories/jobRepository.js';
 import { getEntries as getActivityLog } from '../worker/activityLog.js';
+import { log } from '../worker/activityLog.js';
 
 export const jobQueueController = {
+  async cancelJob(req: Request<{ id: string }>, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const result = await jobRepository.cancel(id);
+
+      if (result.count === 0) {
+        res.status(404).json({ error: 'Job not found or not cancellable' });
+        return;
+      }
+
+      log('jobWorker', `Job ${id} cancelled by user`);
+      res.status(200).json({ data: { id, status: 'cancelled' } });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const [
@@ -57,6 +76,7 @@ export const jobQueueController = {
         locked: 0,
         completed: 0,
         failed: 0,
+        cancelled: 0,
       };
       for (const row of jobCountsByStatus) {
         jobCounts[row.status] = row._count.status;

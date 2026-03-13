@@ -19,8 +19,10 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Button from '@mui/material/Button';
+import CancelIcon from '@mui/icons-material/Cancel';
 import AppHeader from '../components/AppHeader';
-import { useJobQueue } from '../hooks/useJobQueue';
+import { useJobQueue, useCancelJob } from '../hooks/useJobQueue';
 
 function formatRelativeTime(dateStr: string | null): string {
   if (!dateStr) return 'N/A';
@@ -105,6 +107,7 @@ const statusChipColors: Record<string, 'default' | 'info' | 'success' | 'error' 
   locked: 'info',
   completed: 'success',
   failed: 'error',
+  cancelled: 'warning',
 };
 
 function ExpandableErrorRow({ error, colSpan }: { error: string | null; colSpan: number }) {
@@ -297,6 +300,7 @@ function ErrorJobRow({
 
 export default function JobQueuePage() {
   const { data, isLoading, error } = useJobQueue();
+  const cancelJob = useCancelJob();
 
   if (isLoading) {
     return (
@@ -354,6 +358,11 @@ export default function JobQueuePage() {
           <Grid item xs={6} sm={3}>
             <StatCard title="Failed" value={data.jobCounts.failed} color="error" />
           </Grid>
+          {data.jobCounts.cancelled > 0 && (
+            <Grid item xs={6} sm={3}>
+              <StatCard title="Cancelled" value={data.jobCounts.cancelled} color="warning" />
+            </Grid>
+          )}
         </Grid>
 
         {/* Post Counts */}
@@ -386,12 +395,13 @@ export default function JobQueuePage() {
                 <TableCell>Bot</TableCell>
                 <TableCell>Scheduled At</TableCell>
                 <TableCell>Created At</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {data.upcomingJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} align="center">
+                  <TableCell colSpan={4} align="center">
                     <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
                       No upcoming jobs
                     </Typography>
@@ -403,6 +413,17 @@ export default function JobQueuePage() {
                     <TableCell>{job.botHandle || '-'}</TableCell>
                     <TableCell>{new Date(job.scheduledAt).toLocaleString()}</TableCell>
                     <TableCell>{new Date(job.createdAt).toLocaleString()}</TableCell>
+                    <TableCell align="right">
+                      <Button
+                        size="small"
+                        color="warning"
+                        startIcon={<CancelIcon />}
+                        onClick={() => cancelJob.mutate(job.id)}
+                        disabled={cancelJob.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}

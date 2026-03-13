@@ -7,5 +7,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/stats', jobQueueController.getStats);
+router.post('/:id/cancel', jobQueueController.cancelJob);
 
 export default router;
