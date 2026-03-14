@@ -19,7 +19,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { usePosts, useDeleteAllDiscarded } from '../hooks/usePosts';
 
 const TAB_CONFIG = [
-  { label: 'All', status: undefined, emptyMessage: 'No posts yet' },
   { label: 'Drafts', status: 'draft', emptyMessage: 'No drafts yet' },
   {
     label: 'Scheduled',
@@ -36,6 +35,7 @@ const TAB_CONFIG = [
     status: 'discarded',
     emptyMessage: 'No discarded posts',
   },
+  { label: 'All', status: undefined, emptyMessage: 'No posts yet' },
 ] as const;
 
 export default function PostsPage() {
