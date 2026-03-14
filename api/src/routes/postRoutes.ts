@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { postController } from '../controllers/postController.js';
+import { postReviewController } from '../controllers/postReviewController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -11,5 +12,9 @@ router.get('/', postController.list);
 router.patch('/:id', postController.update);
 router.post('/:id/tweak', postController.tweak);
 router.post('/:id/accept-tweak', postController.acceptTweak);
+
+// Review routes
+router.post('/:id/review', postReviewController.review);
+router.get('/:id/reviews', postReviewController.list);
 
 export default router;

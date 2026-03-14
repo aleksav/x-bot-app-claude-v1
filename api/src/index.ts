@@ -15,6 +15,7 @@ import postRoutes from './routes/postRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import jobQueueRoutes from './routes/jobQueueRoutes.js';
+import judgeRoutes from './routes/judgeRoutes.js';
 import * as jobWorker from './worker/jobWorker.js';
 import * as staleLockRecovery from './worker/staleLockRecovery.js';
 import * as postPublisher from './worker/postPublisher.js';
@@ -43,6 +44,7 @@ app.use('/api/auth/x', xOAuthRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobQueueRoutes);
+app.use('/api/judges', judgeRoutes);
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);

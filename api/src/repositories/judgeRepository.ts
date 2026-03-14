@@ -1,0 +1,37 @@
+import { prisma } from '../utils/prisma.js';
+
+export const judgeRepository = {
+  async findAll() {
+    return prisma.judge.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+  },
+
+  async findById(id: string) {
+    return prisma.judge.findUnique({
+      where: { id },
+    });
+  },
+
+  async create(data: { name: string; prompt: string }) {
+    return prisma.judge.create({
+      data: {
+        name: data.name,
+        prompt: data.prompt,
+      },
+    });
+  },
+
+  async update(id: string, data: { name?: string; prompt?: string }) {
+    return prisma.judge.update({
+      where: { id },
+      data,
+    });
+  },
+
+  async delete(id: string) {
+    return prisma.judge.delete({
+      where: { id },
+    });
+  },
+};

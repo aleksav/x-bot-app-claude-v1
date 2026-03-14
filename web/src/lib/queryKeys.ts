@@ -7,16 +7,21 @@ export const queryKeys = {
     detail: (id: string) => ['bots', 'detail', id] as const,
     shares: (botId: string) => ['bots', 'shares', botId] as const,
     tips: (botId: string) => ['bots', 'tips', botId] as const,
+    judges: (botId: string) => ['bots', 'judges', botId] as const,
   },
   posts: {
     list: (status?: string, page?: number, showAll?: boolean) =>
       ['posts', 'list', status ?? 'all', page ?? 1, showAll ?? false] as const,
     all: ['posts'] as const,
+    reviews: (postId: string) => ['posts', 'reviews', postId] as const,
   },
   stats: {
     forBot: (botId: string) => ['stats', 'bot', botId] as const,
   },
   jobs: {
     stats: (showAll?: boolean) => ['jobs', 'stats', showAll ?? false] as const,
+  },
+  judges: {
+    list: ['judges', 'list'] as const,
   },
 } as const;

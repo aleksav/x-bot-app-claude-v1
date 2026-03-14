@@ -12,6 +12,7 @@ import DashboardPage from '../pages/DashboardPage';
 import PostsPage from '../pages/PostsPage';
 import UsersPage from '../pages/UsersPage';
 import JobQueuePage from '../pages/JobQueuePage';
+import JudgesPage from '../pages/JudgesPage';
 
 async function checkAuth(): Promise<boolean> {
   try {
@@ -80,6 +81,18 @@ const usersRoute = createRoute({
   component: UsersPage,
 });
 
+const judgesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/judges',
+  beforeLoad: async () => {
+    const authenticated = await checkAuth();
+    if (!authenticated) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  component: JudgesPage,
+});
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
@@ -100,6 +113,7 @@ const routeTree = rootRoute.addChildren([
   postsRoute,
   jobsRoute,
   usersRoute,
+  judgesRoute,
 ]);
 
 export function createAppRouter(_queryClient?: QueryClient) {

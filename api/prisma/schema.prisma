@@ -35,11 +35,12 @@ model Bot {
   active              Boolean  @default(true)
   createdAt           DateTime @default(now())
 
-  user   User       @relation(fields: [userId], references: [id])
-  posts  Post[]
-  jobs   Job[]
-  shares BotShare[]
-  tips   BotTip[]
+  user      User       @relation(fields: [userId], references: [id])
+  posts     Post[]
+  jobs      Job[]
+  shares    BotShare[]
+  tips      BotTip[]
+  botJudges BotJudge[]
 }
 
 model BotShare {
@@ -65,8 +66,9 @@ model Post {
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
 
-  bot Bot @relation(fields: [botId], references: [id])
-  job Job? @relation(fields: [jobId], references: [id])
+  bot     Bot          @relation(fields: [botId], references: [id])
+  job     Job?         @relation(fields: [jobId], references: [id])
+  reviews PostReview[]
 
   @@index([botId, status])
   @@index([status, scheduledAt])
@@ -98,4 +100,38 @@ model Job {
 
   @@index([status, scheduledAt])
   @@index([status, lockedAt])
+}
+
+model Judge {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  prompt    String   @db.Text
+  createdAt DateTime @default(now())
+
+  botJudges BotJudge[]
+  reviews   PostReview[]
+}
+
+model BotJudge {
+  id        String   @id @default(uuid()) @db.Uuid
+  botId     String   @db.Uuid
+  judgeId   String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  bot   Bot   @relation(fields: [botId], references: [id])
+  judge Judge @relation(fields: [judgeId], references: [id])
+
+  @@unique([botId, judgeId])
+}
+
+model PostReview {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  judgeId   String   @db.Uuid
+  rating    Int
+  opinion   String   @db.Text
+  createdAt DateTime @default(now())
+
+  post  Post  @relation(fields: [postId], references: [id])
+  judge Judge @relation(fields: [judgeId], references: [id])
 }

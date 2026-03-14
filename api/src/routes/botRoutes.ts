@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { botController } from '../controllers/botController.js';
 import { botShareController } from '../controllers/botShareController.js';
 import { botTipController } from '../controllers/botTipController.js';
+import { botJudgeController } from '../controllers/botJudgeController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -26,5 +27,10 @@ router.delete('/:id/shares/:userId', botShareController.remove);
 router.get('/:id/tips', botTipController.list);
 router.patch('/:id/tips/:tipId', botTipController.update);
 router.delete('/:id/tips/:tipId', botTipController.remove);
+
+// Judge assignment routes
+router.get('/:id/judges', botJudgeController.list);
+router.post('/:id/judges', botJudgeController.assign);
+router.delete('/:id/judges/:judgeId', botJudgeController.remove);
 
 export default router;

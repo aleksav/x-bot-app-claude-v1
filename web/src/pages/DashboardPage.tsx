@@ -43,6 +43,12 @@ import {
   useUpdateTip,
   useDeleteTip,
 } from '../hooks/useBot';
+import {
+  useJudges,
+  useBotJudges,
+  useAssignJudge,
+  useRemoveJudge,
+} from '../hooks/useJudges';
 import { useAuth } from '../hooks/useAuth';
 import { useStats } from '../hooks/useStats';
 import { usePosts, type PostStatus } from '../hooks/usePosts';
@@ -109,6 +115,11 @@ export default function DashboardPage() {
   const [editingTipId, setEditingTipId] = useState<string | null>(null);
   const [editingTipContent, setEditingTipContent] = useState('');
   const [deleteConfirmTipId, setDeleteConfirmTipId] = useState<string | null>(null);
+
+  const { data: allJudges } = useJudges();
+  const { data: botJudges } = useBotJudges(bot?.id);
+  const assignJudge = useAssignJudge();
+  const removeJudge = useRemoveJudge();
 
   const { data: stats, isLoading: statsLoading } = useStats(bot?.id);
   const { data: recentPostsData, isLoading: recentPostsLoading } = usePosts(undefined, 1, 5);
@@ -567,6 +578,89 @@ export default function DashboardPage() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Judges Section */}
+        <Typography variant="h6" gutterBottom>
+          Judges {botJudges && `(${botJudges.length}/5)`}
+        </Typography>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            {botJudges && botJudges.length > 0 ? (
+              <List dense disablePadding>
+                {botJudges.map((bj, index) => (
+                  <div key={bj.id}>
+                    {index > 0 && <Divider />}
+                    <ListItem
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={() => {
+                            if (!bot) return;
+                            removeJudge.mutate(
+                              { botId: bot.id, judgeId: bj.judgeId },
+                              {
+                                onSuccess: () =>
+                                  showSnackbar(`Removed judge "${bj.judge.name}"`, 'success'),
+                                onError: () =>
+                                  showSnackbar('Failed to remove judge', 'error'),
+                              },
+                            );
+                          }}
+                          disabled={removeJudge.isPending}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      }
+                    >
+                      <ListItemText
+                        primary={bj.judge.name}
+                        secondary={bj.judge.prompt.length > 100 ? bj.judge.prompt.substring(0, 100) + '...' : bj.judge.prompt}
+                      />
+                    </ListItem>
+                  </div>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No judges assigned. Assign judges to get AI-powered reviews on your posts.
+              </Typography>
+            )}
+            {allJudges && botJudges && botJudges.length < 5 && (
+              <Box sx={{ mt: 2 }}>
+                <Select
+                  size="small"
+                  displayEmpty
+                  value=""
+                  onChange={(e) => {
+                    const judgeId = e.target.value as string;
+                    if (!judgeId || !bot) return;
+                    assignJudge.mutate(
+                      { botId: bot.id, judgeId },
+                      {
+                        onSuccess: () => showSnackbar('Judge assigned', 'success'),
+                        onError: () => showSnackbar('Failed to assign judge', 'error'),
+                      },
+                    );
+                  }}
+                  sx={{ minWidth: 200 }}
+                  disabled={assignJudge.isPending}
+                >
+                  <MenuItem value="" disabled>
+                    Add a judge...
+                  </MenuItem>
+                  {allJudges
+                    .filter((j) => !botJudges.some((bj) => bj.judgeId === j.id))
+                    .map((j) => (
+                      <MenuItem key={j.id} value={j.id}>
+                        {j.name}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Quick Actions */}
         <Typography variant="h6" gutterBottom>
