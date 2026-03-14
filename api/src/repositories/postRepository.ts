@@ -1,4 +1,7 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma.js';
+
+type TxClient = Prisma.TransactionClient;
 
 export const postRepository = {
   async create(data: {
@@ -138,6 +141,39 @@ export const postRepository = {
         status,
         ...extra,
       },
+    });
+  },
+
+  async delete(id: string) {
+    return prisma.$transaction([
+      prisma.postReview.deleteMany({ where: { postId: id } }),
+      prisma.post.delete({ where: { id } }),
+    ]);
+  },
+
+  async deleteDiscardedByBotIds(botIds: string[]) {
+    const discardedPosts = await prisma.post.findMany({
+      where: { botId: { in: botIds }, status: 'discarded' },
+      select: { id: true },
+    });
+    const postIds = discardedPosts.map((p: { id: string }) => p.id);
+    if (postIds.length === 0) return { count: 0 };
+    return prisma.$transaction(async (tx: TxClient) => {
+      await tx.postReview.deleteMany({ where: { postId: { in: postIds } } });
+      return tx.post.deleteMany({ where: { id: { in: postIds } } });
+    });
+  },
+
+  async deleteAllDiscarded() {
+    const discardedPosts = await prisma.post.findMany({
+      where: { status: 'discarded' },
+      select: { id: true },
+    });
+    const postIds = discardedPosts.map((p: { id: string }) => p.id);
+    if (postIds.length === 0) return { count: 0 };
+    return prisma.$transaction(async (tx: TxClient) => {
+      await tx.postReview.deleteMany({ where: { postId: { in: postIds } } });
+      return tx.post.deleteMany({ where: { id: { in: postIds } } });
     });
   },
 
