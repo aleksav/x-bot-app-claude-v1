@@ -87,6 +87,16 @@ export const postRepository = {
     });
   },
 
+  async countPublishedByBotSince(botId: string, since: Date) {
+    return prisma.post.count({
+      where: {
+        botId,
+        status: 'published',
+        publishedAt: { gte: since },
+      },
+    });
+  },
+
   async countRecentByBot(botId: string, hoursBack = 24) {
     const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
     return prisma.post.count({
