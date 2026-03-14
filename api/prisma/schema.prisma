@@ -15,7 +15,8 @@ model User {
   archivedAt   DateTime?
   createdAt    DateTime @default(now())
 
-  bots Bot[]
+  bots      Bot[]
+  botShares BotShare[]
 }
 
 model Bot {
@@ -33,9 +34,22 @@ model Bot {
   active              Boolean  @default(true)
   createdAt           DateTime @default(now())
 
-  user  User   @relation(fields: [userId], references: [id])
-  posts Post[]
-  jobs  Job[]
+  user   User       @relation(fields: [userId], references: [id])
+  posts  Post[]
+  jobs   Job[]
+  shares BotShare[]
+}
+
+model BotShare {
+  id        String   @id @default(uuid()) @db.Uuid
+  botId     String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  bot  Bot  @relation(fields: [botId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([botId, userId])
 }
 
 model Post {

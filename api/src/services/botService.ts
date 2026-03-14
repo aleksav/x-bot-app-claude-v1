@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma.js';
 import { botRepository } from '../repositories/botRepository.js';
+import { botShareRepository } from '../repositories/botShareRepository.js';
 import { jobRepository } from '../repositories/jobRepository.js';
 import { NotFoundError, ForbiddenError } from '../utils/errors.js';
 
@@ -72,7 +73,10 @@ export const botService = {
       throw new NotFoundError('Bot not found');
     }
     if (bot.userId !== userId) {
-      throw new ForbiddenError('You do not have access to this bot');
+      const share = await botShareRepository.findByBotIdAndUserId(botId, userId);
+      if (!share) {
+        throw new ForbiddenError('You do not have access to this bot');
+      }
     }
     return bot;
   },
@@ -83,7 +87,10 @@ export const botService = {
       throw new NotFoundError('Bot not found');
     }
     if (bot.userId !== userId) {
-      throw new ForbiddenError('You do not have access to this bot');
+      const share = await botShareRepository.findByBotIdAndUserId(botId, userId);
+      if (!share) {
+        throw new ForbiddenError('You do not have access to this bot');
+      }
     }
     return botRepository.update(botId, input);
   },

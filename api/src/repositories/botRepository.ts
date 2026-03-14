@@ -52,15 +52,21 @@ export const botRepository = {
   },
 
   async findByUserId(userId: string, page: number, pageSize: number) {
+    const where = {
+      OR: [{ userId }, { shares: { some: { userId } } }],
+    };
     const [bots, total] = await Promise.all([
       prisma.bot.findMany({
-        where: { userId },
-        select: botSelect,
+        where,
+        select: {
+          ...botSelect,
+          user: { select: { id: true, email: true, name: true } },
+        },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.bot.count({ where: { userId } }),
+      prisma.bot.count({ where }),
     ]);
     return { bots, total };
   },
