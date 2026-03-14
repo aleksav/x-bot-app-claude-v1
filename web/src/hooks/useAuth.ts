@@ -5,6 +5,7 @@ import { queryKeys } from '../lib/queryKeys';
 type User = {
   id: string;
   email: string;
+  isAdmin: boolean;
 };
 
 type AuthResponse = {

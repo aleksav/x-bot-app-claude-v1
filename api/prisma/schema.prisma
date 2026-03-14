@@ -12,6 +12,7 @@ model User {
   email     String   @unique
   name         String
   passwordHash String   @default("")
+  isAdmin      Boolean  @default(false)
   archivedAt   DateTime?
   createdAt    DateTime @default(now())
 

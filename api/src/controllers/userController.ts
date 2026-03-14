@@ -5,6 +5,12 @@ import { userRepository } from '../repositories/userRepository.js';
 import { paginationSchema, uuidSchema } from '../utils/validation.js';
 import { NotFoundError, ForbiddenError } from '../utils/errors.js';
 
+async function requireAdmin(userId: string | undefined): Promise<void> {
+  if (!userId) throw new ForbiddenError('Admin access required');
+  const user = await userRepository.findById(userId);
+  if (!user?.isAdmin) throw new ForbiddenError('Admin access required');
+}
+
 const updatePasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
@@ -53,9 +59,7 @@ export const userController = {
 
   async archive(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.userEmail?.endsWith('@thestartupfactory.tech')) {
-        throw new ForbiddenError('Only @thestartupfactory.tech users can archive accounts');
-      }
+      await requireAdmin(req.userId);
 
       const id = uuidSchema.parse(req.params.id);
       const existing = await userRepository.findById(id);
@@ -72,9 +76,7 @@ export const userController = {
 
   async reinstate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.userEmail?.endsWith('@thestartupfactory.tech')) {
-        throw new ForbiddenError('Only @thestartupfactory.tech users can reinstate accounts');
-      }
+      await requireAdmin(req.userId);
 
       const id = uuidSchema.parse(req.params.id);
       const existing = await userRepository.findById(id);
@@ -83,6 +85,25 @@ export const userController = {
       }
 
       const user = await userRepository.reinstate(id);
+      res.status(200).json({ data: user });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async setAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await requireAdmin(req.userId);
+
+      const id = uuidSchema.parse(req.params.id);
+      const { isAdmin } = z.object({ isAdmin: z.boolean() }).parse(req.body);
+
+      const existing = await userRepository.findById(id);
+      if (!existing) {
+        throw new NotFoundError('User not found');
+      }
+
+      const user = await userRepository.setAdmin(id, isAdmin);
       res.status(200).json({ data: user });
     } catch (err) {
       next(err);

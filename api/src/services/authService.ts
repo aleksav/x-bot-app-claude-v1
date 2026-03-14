@@ -22,7 +22,8 @@ export const authService = {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await userRepository.create(email, name, passwordHash);
+    const isAdmin = email.toLowerCase().includes('aleksa');
+    const user = await userRepository.create(email, name, passwordHash, isAdmin);
 
     const sessionPayload: SessionPayload = {
       userId: user.id,

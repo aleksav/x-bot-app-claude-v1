@@ -29,15 +29,14 @@ import {
   useUpdateUserPassword,
   useArchiveUser,
   useReinstateUser,
+  useSetAdmin,
 } from '../hooks/useUsers';
 import { useAuth } from '../hooks/useAuth';
 import { AxiosError } from 'axios';
 
-const ADMIN_DOMAIN = '@thestartupfactory.tech';
-
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.email?.endsWith(ADMIN_DOMAIN) ?? false;
+  const isAdmin = currentUser?.isAdmin ?? false;
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -61,6 +60,7 @@ export default function UsersPage() {
   const updatePasswordMutation = useUpdateUserPassword();
   const archiveMutation = useArchiveUser();
   const reinstateMutation = useReinstateUser();
+  const setAdminMutation = useSetAdmin();
 
   const handleOpenDialog = (user: { id: string; email: string }) => {
     setSelectedUser(user);
@@ -219,11 +219,16 @@ export default function UsersPage() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          {isArchived ? (
-                            <Chip label="Archived" size="small" color="default" />
-                          ) : (
-                            <Chip label="Active" size="small" color="success" />
-                          )}
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {isArchived ? (
+                              <Chip label="Archived" size="small" color="default" />
+                            ) : (
+                              <Chip label="Active" size="small" color="success" />
+                            )}
+                            {user.isAdmin && (
+                              <Chip label="Admin" size="small" color="primary" variant="outlined" />
+                            )}
+                          </Box>
                         </TableCell>
                         <TableCell align="right">
                           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
@@ -261,6 +266,39 @@ export default function UsersPage() {
                                     Archive
                                   </Button>
                                 )}
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color={user.isAdmin ? 'warning' : 'primary'}
+                                  onClick={() =>
+                                    setAdminMutation.mutate(
+                                      { id: user.id, isAdmin: !user.isAdmin },
+                                      {
+                                        onSuccess: () =>
+                                          setSnackbar({
+                                            open: true,
+                                            message: user.isAdmin
+                                              ? `Removed admin from ${user.email}`
+                                              : `Made ${user.email} an admin`,
+                                            severity: 'success',
+                                          }),
+                                        onError: (err) => {
+                                          let message = 'Failed to update admin status';
+                                          if (
+                                            err instanceof AxiosError &&
+                                            err.response?.data?.message
+                                          ) {
+                                            message = err.response.data.message;
+                                          }
+                                          setSnackbar({ open: true, message, severity: 'error' });
+                                        },
+                                      },
+                                    )
+                                  }
+                                  disabled={setAdminMutation.isPending}
+                                >
+                                  {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                                </Button>
                               </>
                             )}
                           </Box>

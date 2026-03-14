@@ -1,6 +1,6 @@
 import { prisma } from '../utils/prisma.js';
 
-const userSelect = { id: true, email: true, name: true, archivedAt: true, createdAt: true };
+const userSelect = { id: true, email: true, name: true, isAdmin: true, archivedAt: true, createdAt: true };
 
 export const userRepository = {
   async findByEmail(email: string) {
@@ -24,9 +24,17 @@ export const userRepository = {
     });
   },
 
-  async create(email: string, name: string, passwordHash: string) {
+  async create(email: string, name: string, passwordHash: string, isAdmin = false) {
     return prisma.user.create({
-      data: { email, name, passwordHash },
+      data: { email, name, passwordHash, isAdmin },
+      select: userSelect,
+    });
+  },
+
+  async setAdmin(id: string, isAdmin: boolean) {
+    return prisma.user.update({
+      where: { id },
+      data: { isAdmin },
       select: userSelect,
     });
   },
