@@ -4,6 +4,8 @@ import { log } from './activityLog.js';
 
 const POLL_INTERVAL_MS = parseInt(process.env.POST_PUBLISHER_POLL_INTERVAL_MS || '30000', 10);
 const MAX_RETRIES = 3;
+const MAX_POSTS_PER_HOUR = 2;
+const RESCHEDULE_DELAY_MS = 30 * 60 * 1000; // 30 minutes
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 let running = false;
@@ -31,6 +33,21 @@ async function publishPosts(): Promise<void> {
       }
 
       const bot = post.bot;
+
+      // Rate limit: max 2 posts per hour per bot
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const publishedLastHour = await postRepository.countPublishedByBotSince(bot.id, oneHourAgo);
+      if (publishedLastHour >= MAX_POSTS_PER_HOUR) {
+        const newScheduledAt = new Date(Date.now() + RESCHEDULE_DELAY_MS);
+        await postRepository.update(post.id, { scheduledAt: newScheduledAt });
+        log(
+          'postPublisher',
+          `Rate limit: bot ${bot.id} has ${publishedLastHour} posts in last hour (max ${MAX_POSTS_PER_HOUR}), rescheduled post ${post.id} to ${newScheduledAt.toISOString()}`,
+          'warn',
+        );
+        continue;
+      }
+
       const result = await publishTweet(post.content, bot.xAccessToken, bot.xAccessSecret, bot.id);
 
       if (result.success) {
