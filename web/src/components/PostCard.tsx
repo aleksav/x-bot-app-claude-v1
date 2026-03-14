@@ -15,6 +15,7 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import type { Post, PostStatus } from '../hooks/usePosts';
 import { useUpdatePost, useTweakPost, useAcceptTweak } from '../hooks/usePosts';
+import { usePostReviews, useRequestReview, type PostReview } from '../hooks/useJudges';
 
 const statusColors: Record<PostStatus, 'default' | 'info' | 'success' | 'error'> = {
   draft: 'default',
@@ -50,6 +51,9 @@ export default function PostCard({ post }: PostCardProps) {
   const updatePost = useUpdatePost();
   const tweakPost = useTweakPost();
   const acceptTweak = useAcceptTweak();
+  const { data: reviews } = usePostReviews(post.id);
+  const requestReview = useRequestReview();
+  const [showReviews, setShowReviews] = useState(false);
 
   useEffect(() => {
     if (conversationEndRef.current) {
@@ -246,6 +250,18 @@ export default function PostCard({ post }: PostCardProps) {
                 </Button>
                 <Button
                   size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    requestReview.mutate(post.id, {
+                      onSuccess: () => setShowReviews(true),
+                    });
+                  }}
+                  disabled={requestReview.isPending}
+                >
+                  {requestReview.isPending ? <CircularProgress size={16} /> : 'Ask Judges'}
+                </Button>
+                <Button
+                  size="small"
                   variant="contained"
                   onClick={handleSchedule}
                   disabled={updatePost.isPending}
@@ -275,6 +291,41 @@ export default function PostCard({ post }: PostCardProps) {
           </Box>
         </Box>
       </CardContent>
+
+      {/* Reviews Section */}
+      {reviews && reviews.length > 0 && (
+        <CardContent sx={{ pt: 0 }}>
+          <Button
+            size="small"
+            onClick={() => setShowReviews(!showReviews)}
+            sx={{ mb: 1 }}
+          >
+            {showReviews ? 'Hide Reviews' : `Show Reviews (${reviews.length})`}
+          </Button>
+          {showReviews && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {reviews.map((review: PostReview) => (
+                <Box
+                  key={review.id}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: 'action.hover',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                    <Typography variant="subtitle2">{review.judge.name}</Typography>
+                    <Rating value={review.rating} readOnly size="small" />
+                  </Box>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {review.opinion}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </CardContent>
+      )}
 
       {/* Tweak Dialog */}
       <Dialog open={tweakOpen} onClose={handleCloseTweak} maxWidth="sm" fullWidth>

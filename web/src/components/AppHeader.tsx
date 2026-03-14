@@ -39,6 +39,11 @@ export default function AppHeader() {
               <Button color="inherit" component={Link} to="/users">
                 Users
               </Button>
+              {user.isAdmin && (
+                <Button color="inherit" component={Link} to="/judges">
+                  Judges
+                </Button>
+              )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Typography variant="body2">{user.email}</Typography>
