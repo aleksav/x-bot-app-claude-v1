@@ -5,6 +5,7 @@ export const queryKeys = {
   bots: {
     list: ['bots', 'list'] as const,
     detail: (id: string) => ['bots', 'detail', id] as const,
+    shares: (botId: string) => ['bots', 'shares', botId] as const,
   },
   posts: {
     list: (status?: string, page?: number) =>

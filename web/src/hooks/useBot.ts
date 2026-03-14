@@ -2,7 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/apiClient';
 import { queryKeys } from '../lib/queryKeys';
 
-type Bot = {
+type BotOwner = {
+  id: string;
+  email: string;
+  name: string;
+};
+
+export type Bot = {
   id: string;
   userId: string;
   xAccountHandle: string;
@@ -15,6 +21,7 @@ type Bot = {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  user?: BotOwner;
 };
 
 type BotListResponse = {
@@ -43,6 +50,24 @@ type UpdateBotInput = {
   preferredHoursStart?: number;
   preferredHoursEnd?: number;
   active?: boolean;
+};
+
+export type BotShareUser = {
+  id: string;
+  email: string;
+  name: string;
+};
+
+export type BotShare = {
+  id: string;
+  botId: string;
+  userId: string;
+  createdAt: string;
+  user: BotShareUser;
+};
+
+type BotShareListResponse = {
+  data: BotShare[];
 };
 
 export function useBot() {
@@ -107,6 +132,50 @@ export function useUpdateBot() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bots.list });
+    },
+  });
+}
+
+export function useBotShares(botId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.bots.shares(botId ?? ''),
+    queryFn: async () => {
+      const response = await apiClient.get<BotShareListResponse>(`/bots/${botId}/shares`);
+      return response.data.data;
+    },
+    enabled: !!botId,
+  });
+}
+
+export function useShareBot() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ botId, email }: { botId: string; email: string }) => {
+      const response = await apiClient.post<{ data: BotShare }>(`/bots/${botId}/shares`, {
+        email,
+      });
+      return response.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.bots.shares(variables.botId),
+      });
+    },
+  });
+}
+
+export function useUnshareBot() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ botId, userId }: { botId: string; userId: string }) => {
+      await apiClient.delete(`/bots/${botId}/shares/${userId}`);
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.bots.shares(variables.botId),
+      });
     },
   });
 }
