@@ -5,6 +5,7 @@ type User = {
   id: string;
   name: string;
   email: string;
+  isAdmin: boolean;
   createdAt: string;
   archivedAt: string | null;
 };
@@ -64,6 +65,20 @@ export function useReinstateUser() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await apiClient.patch(`/users/${id}/reinstate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['users', 'list'] });
+    },
+  });
+}
+
+export function useSetAdmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, isAdmin }: { id: string; isAdmin: boolean }) => {
+      const response = await apiClient.patch(`/users/${id}/admin`, { isAdmin });
       return response.data;
     },
     onSuccess: () => {
