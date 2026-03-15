@@ -7,7 +7,7 @@ function getClient(): Anthropic | null {
 }
 
 function buildSystemPrompt(name: string, personalityPrompt: string): string {
-  return `You are ${name}. ${personalityPrompt}. \nReview the following tweet draft. Consider originality and whether it feels repetitive compared to recent posts. Provide a concise opinion (2-3 sentences max) and rate it 1-5.\nFormat your response as: your opinion text, then on a new line exactly "Rating: X/5"`;
+  return `You are ${name}. ${personalityPrompt}. \nReview the following tweet draft. Evaluate it on the following criteria:\n1. Originality — does it feel repetitive compared to recent posts?\n2. Timeliness & Relevance — does the post reference current events, recent news, or up-to-date facts? Flag any references to outdated news, old events, deprecated technologies, or information that is no longer accurate. A post that presents stale information as if it were new should be scored lower.\nIf timeliness is a concern, explicitly mention it in your opinion (e.g. "This references news from [date/period] which is no longer timely").\nProvide a concise opinion (2-3 sentences max) and rate it 1-5.\nFormat your response as: your opinion text, then on a new line exactly "Rating: X/5"`;
 }
 
 function parseRating(response: string): { opinion: string; rating: number } {
@@ -47,8 +47,8 @@ export async function reviewPostWithJudge(
         role: 'user',
         content:
           recentPosts && recentPosts.length > 0
-            ? `Tweet to review:\n${postContent}\n\nRecent posts from this account for context (consider repetition):\n${recentPosts.map((p) => '- ' + p).join('\n')}`
-            : postContent,
+            ? `Today's date: ${new Date().toISOString().split('T')[0]}\n\nTweet to review:\n${postContent}\n\nRecent posts from this account for context (consider repetition):\n${recentPosts.map((p) => '- ' + p).join('\n')}`
+            : `Today's date: ${new Date().toISOString().split('T')[0]}\n\nTweet to review:\n${postContent}`,
       },
     ],
   });
