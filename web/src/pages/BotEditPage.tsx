@@ -144,8 +144,7 @@ export default function BotEditPage() {
               <Tabs
                 value={activeTab}
                 onChange={(_e, newValue: number) => setActiveTab(newValue)}
-                variant="scrollable"
-                scrollButtons="auto"
+                variant="fullWidth"
               >
                 {styles?.map((style, index) => (
                   <Tab
@@ -155,7 +154,6 @@ export default function BotEditPage() {
                         <span
                           style={{
                             display: 'block',
-                            maxWidth: 160,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -166,7 +164,7 @@ export default function BotEditPage() {
                       </Tooltip>
                     }
                     sx={{
-                      maxWidth: 200,
+                      minWidth: 0,
                       opacity: style.active ? 1 : 0.5,
                       textTransform: 'none',
                     }}
