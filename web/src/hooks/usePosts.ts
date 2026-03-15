@@ -11,6 +11,7 @@ export type Post = {
   status: PostStatus;
   rating: number | null;
   stylePrompt: string | null;
+  styleTitle: string | null;
   scheduledAt: string | null;
   publishedAt: string | null;
   createdAt: string;

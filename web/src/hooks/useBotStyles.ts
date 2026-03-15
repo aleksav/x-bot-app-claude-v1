@@ -5,6 +5,7 @@ import { queryKeys } from '../lib/queryKeys';
 export type BotStyle = {
   id: string;
   botId: string;
+  title: string;
   content: string;
   active: boolean;
   createdAt: string;
@@ -29,9 +30,10 @@ export function useCreateBotStyle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ botId, content }: { botId: string; content: string }) => {
+    mutationFn: async ({ botId, content, title }: { botId: string; content: string; title?: string }) => {
       const response = await apiClient.post<{ data: BotStyle }>(`/bots/${botId}/styles`, {
         content,
+        title,
       });
       return response.data.data;
     },
@@ -51,14 +53,16 @@ export function useUpdateBotStyle() {
       botId,
       styleId,
       content,
+      title,
     }: {
       botId: string;
       styleId: string;
       content: string;
+      title?: string;
     }) => {
       const response = await apiClient.patch<{ data: BotStyle }>(
         `/bots/${botId}/styles/${styleId}`,
-        { content },
+        { content, title },
       );
       return response.data.data;
     },

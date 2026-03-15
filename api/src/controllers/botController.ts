@@ -126,6 +126,7 @@ export const botController = {
             content: result.content,
             status: 'draft',
             stylePrompt: selectedStyle?.content ?? null,
+            styleTitle: selectedStyle?.title || null,
           });
           posts.push(post);
         }

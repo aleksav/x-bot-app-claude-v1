@@ -168,6 +168,7 @@ async function processJobs(): Promise<void> {
           status: postStatus,
           scheduledAt,
           stylePrompt: selectedStyle?.content ?? null,
+          styleTitle: selectedStyle?.title || null,
         });
 
         await jobRepository.markCompleted(job.id);

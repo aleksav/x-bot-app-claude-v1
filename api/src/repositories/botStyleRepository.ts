@@ -21,16 +21,16 @@ export const botStyleRepository = {
     });
   },
 
-  async create(botId: string, content: string, active?: boolean) {
+  async create(botId: string, content: string, active?: boolean, title?: string) {
     return prisma.botStyle.create({
-      data: { botId, content, ...(active !== undefined ? { active } : {}) },
+      data: { botId, content, title: title ?? '', ...(active !== undefined ? { active } : {}) },
     });
   },
 
-  async update(id: string, content: string) {
+  async update(id: string, content: string, title?: string) {
     return prisma.botStyle.update({
       where: { id },
-      data: { content },
+      data: { content, ...(title !== undefined ? { title } : {}) },
     });
   },
 
