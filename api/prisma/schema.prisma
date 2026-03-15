@@ -99,6 +99,7 @@ model BotBehaviour {
   title     String   @default("")
   content         String   @db.Text
   knowledgeSource String   @default("default")
+  outcome         String   @default("write_post")
   weight          Int      @default(0)
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())

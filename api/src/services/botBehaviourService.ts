@@ -30,6 +30,7 @@ export const botBehaviourService = {
     content: string,
     title?: string,
     knowledgeSource?: string,
+    outcome?: string,
     weight?: number,
   ) {
     await assertBotAccess(botId, userId);
@@ -39,7 +40,15 @@ export const botBehaviourService = {
       throw new ValidationError(`Maximum of ${MAX_BEHAVIOURS_PER_BOT} behaviours per bot`);
     }
 
-    return botBehaviourRepository.create(botId, content, undefined, title, knowledgeSource, weight);
+    return botBehaviourRepository.create(
+      botId,
+      content,
+      undefined,
+      title,
+      knowledgeSource,
+      outcome,
+      weight,
+    );
   },
 
   async update(
@@ -49,6 +58,7 @@ export const botBehaviourService = {
     content: string,
     title?: string,
     knowledgeSource?: string,
+    outcome?: string,
     weight?: number,
   ) {
     await assertBotAccess(botId, userId);
@@ -58,7 +68,14 @@ export const botBehaviourService = {
       throw new NotFoundError('Behaviour not found');
     }
 
-    return botBehaviourRepository.update(behaviourId, content, title, knowledgeSource, weight);
+    return botBehaviourRepository.update(
+      behaviourId,
+      content,
+      title,
+      knowledgeSource,
+      outcome,
+      weight,
+    );
   },
 
   async remove(botId: string, behaviourId: string, userId: string) {

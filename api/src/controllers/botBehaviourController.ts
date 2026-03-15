@@ -12,10 +12,13 @@ const behaviourIdParamSchema = z.object({
   behaviourId: uuidSchema,
 });
 
+const outcomeEnum = z.enum(['write_post', 'reply_to_post', 'like_post', 'follow_account']);
+
 const createBehaviourSchema = z.object({
   content: z.string().min(1, 'Content must not be empty'),
   title: z.string().optional(),
   knowledgeSource: z.enum(['default', 'ai', 'ai+web']).default('default'),
+  outcome: outcomeEnum.default('write_post'),
   weight: z.number().int().min(0).max(100).optional(),
 });
 
@@ -23,6 +26,7 @@ const updateBehaviourSchema = z.object({
   content: z.string().min(1, 'Content must not be empty'),
   title: z.string().optional(),
   knowledgeSource: z.enum(['default', 'ai', 'ai+web']).optional(),
+  outcome: outcomeEnum.optional(),
   weight: z.number().int().min(0).max(100).optional(),
 });
 
@@ -49,13 +53,16 @@ export const botBehaviourController = {
     try {
       const userId = req.userId!;
       const { id } = botIdParamSchema.parse(req.params);
-      const { content, title, knowledgeSource, weight } = createBehaviourSchema.parse(req.body);
+      const { content, title, knowledgeSource, outcome, weight } = createBehaviourSchema.parse(
+        req.body,
+      );
       const behaviour = await botBehaviourService.create(
         id,
         userId,
         content,
         title,
         knowledgeSource,
+        outcome,
         weight,
       );
 
@@ -71,7 +78,9 @@ export const botBehaviourController = {
     try {
       const userId = req.userId!;
       const { id, behaviourId } = behaviourIdParamSchema.parse(req.params);
-      const { content, title, knowledgeSource, weight } = updateBehaviourSchema.parse(req.body);
+      const { content, title, knowledgeSource, outcome, weight } = updateBehaviourSchema.parse(
+        req.body,
+      );
       const behaviour = await botBehaviourService.update(
         id,
         behaviourId,
@@ -79,6 +88,7 @@ export const botBehaviourController = {
         content,
         title,
         knowledgeSource,
+        outcome,
         weight,
       );
 
