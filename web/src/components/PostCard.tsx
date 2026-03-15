@@ -230,6 +230,20 @@ export default function PostCard({ post }: PostCardProps) {
           </Typography>
         )}
 
+        {post.stylePrompt && (
+          <Chip
+            label={`Style: ${post.stylePrompt}`}
+            size="small"
+            variant="outlined"
+            sx={{
+              mb: 1,
+              maxWidth: '100%',
+              height: 'auto',
+              '& .MuiChip-label': { whiteSpace: 'normal' },
+            }}
+          />
+        )}
+
         {post.scheduledAt && (
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
             Scheduled: {formatDate(post.scheduledAt)}
