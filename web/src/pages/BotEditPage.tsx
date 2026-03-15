@@ -49,6 +49,7 @@ export default function BotEditPage() {
     {},
   );
   const [editingWeights, setEditingWeights] = useState<Record<string, number>>({});
+  const [editingOutcomes, setEditingOutcomes] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<string | false>(false);
 
   const bot = bots.find((b) => b.id === botId);
@@ -225,6 +226,7 @@ export default function BotEditPage() {
                   editingBehaviours[behaviour.id] !== undefined ||
                   editingTitles[behaviour.id] !== undefined ||
                   editingKnowledgeSources[behaviour.id] !== undefined ||
+                  editingOutcomes[behaviour.id] !== undefined ||
                   editingWeights[behaviour.id] !== undefined;
 
                 return (
@@ -343,6 +345,28 @@ export default function BotEditPage() {
                           <MenuItem value="ai+web">AI + Web Search</MenuItem>
                         </Select>
                       </FormControl>
+                      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                        <InputLabel>Outcome</InputLabel>
+                        <Select
+                          value={
+                            editingOutcomes[behaviour.id] !== undefined
+                              ? editingOutcomes[behaviour.id]
+                              : behaviour.outcome
+                          }
+                          label="Outcome"
+                          onChange={(e) =>
+                            setEditingOutcomes((prev) => ({
+                              ...prev,
+                              [behaviour.id]: e.target.value,
+                            }))
+                          }
+                        >
+                          <MenuItem value="write_post">Write Post</MenuItem>
+                          <MenuItem value="reply_to_post">Reply to Post</MenuItem>
+                          <MenuItem value="like_post">Like Post</MenuItem>
+                          <MenuItem value="follow_account">Follow Account</MenuItem>
+                        </Select>
+                      </FormControl>
                       <TextField
                         fullWidth
                         size="small"
@@ -386,6 +410,7 @@ export default function BotEditPage() {
                               const title = editingTitles[behaviour.id] ?? behaviour.title;
                               const ks =
                                 editingKnowledgeSources[behaviour.id] ?? behaviour.knowledgeSource;
+                              const oc = editingOutcomes[behaviour.id] ?? behaviour.outcome;
                               const w = editingWeights[behaviour.id] ?? behaviour.weight;
                               if (content && content.trim()) {
                                 updateBehaviour.mutate(
@@ -395,6 +420,7 @@ export default function BotEditPage() {
                                     content: content.trim(),
                                     title: title?.trim(),
                                     knowledgeSource: ks,
+                                    outcome: oc,
                                     weight: w,
                                   },
                                   {
@@ -410,6 +436,11 @@ export default function BotEditPage() {
                                         return next;
                                       });
                                       setEditingKnowledgeSources((prev) => {
+                                        const next = { ...prev };
+                                        delete next[behaviour.id];
+                                        return next;
+                                      });
+                                      setEditingOutcomes((prev) => {
                                         const next = { ...prev };
                                         delete next[behaviour.id];
                                         return next;

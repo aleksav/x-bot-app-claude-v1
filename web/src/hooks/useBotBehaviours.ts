@@ -8,6 +8,7 @@ export type BotBehaviour = {
   title: string;
   content: string;
   knowledgeSource: string;
+  outcome: string;
   weight: number;
   active: boolean;
   createdAt: string;
@@ -37,18 +38,21 @@ export function useCreateBotBehaviour() {
       content,
       title,
       knowledgeSource,
+      outcome,
       weight,
     }: {
       botId: string;
       content: string;
       title?: string;
       knowledgeSource?: string;
+      outcome?: string;
       weight?: number;
     }) => {
       const response = await apiClient.post<{ data: BotBehaviour }>(`/bots/${botId}/behaviours`, {
         content,
         title,
         knowledgeSource,
+        outcome,
         weight,
       });
       return response.data.data;
@@ -71,6 +75,7 @@ export function useUpdateBotBehaviour() {
       content,
       title,
       knowledgeSource,
+      outcome,
       weight,
     }: {
       botId: string;
@@ -78,11 +83,12 @@ export function useUpdateBotBehaviour() {
       content: string;
       title?: string;
       knowledgeSource?: string;
+      outcome?: string;
       weight?: number;
     }) => {
       const response = await apiClient.patch<{ data: BotBehaviour }>(
         `/bots/${botId}/behaviours/${behaviourId}`,
-        { content, title, knowledgeSource, weight },
+        { content, title, knowledgeSource, outcome, weight },
       );
       return response.data.data;
     },
