@@ -78,6 +78,7 @@ export async function generateTweet(
   prompt: string,
   tips?: string[],
   recentPosts?: string[],
+  stylePrompt?: string,
 ): Promise<GenerateTweetResult> {
   const client = getClient();
 
@@ -95,6 +96,9 @@ export async function generateTweet(
   }
   if (recentPosts && recentPosts.length > 0) {
     systemPrompt += `\n\nHere are recent posts for this account — make sure your new tweet is fresh and different, not repetitive:\n${recentPosts.map((p) => `- ${p}`).join('\n')}`;
+  }
+  if (stylePrompt) {
+    systemPrompt += `\n\nWrite in this style: ${stylePrompt}`;
   }
 
   // First attempt

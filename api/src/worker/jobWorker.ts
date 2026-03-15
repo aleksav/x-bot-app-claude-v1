@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { jobRepository } from '../repositories/jobRepository.js';
 import { postRepository } from '../repositories/postRepository.js';
 import { botTipRepository } from '../repositories/botTipRepository.js';
+import { botStyleRepository } from '../repositories/botStyleRepository.js';
 import { generateTweet } from '../services/aiService.js';
 import { computeNextScheduledAt } from '../services/scheduler.js';
 import { log } from './activityLog.js';
@@ -138,10 +139,15 @@ async function processJobs(): Promise<void> {
 
         const tips = await botTipRepository.findByBotId(bot.id);
         const recentPosts = await postRepository.findRecentByBotId(bot.id, 10);
+        const styles = await botStyleRepository.findByBotId(bot.id);
+        const selectedStyle =
+          styles.length > 0 ? styles[Math.floor(Math.random() * styles.length)] : null;
+
         const result = await generateTweet(
           bot.prompt,
           tips.map((t: { content: string }) => t.content),
           recentPosts.map((p: { content: string }) => p.content),
+          selectedStyle?.content,
         );
 
         if (!result.success) {
@@ -161,6 +167,7 @@ async function processJobs(): Promise<void> {
           content: result.content,
           status: postStatus,
           scheduledAt,
+          stylePrompt: selectedStyle?.content ?? null,
         });
 
         await jobRepository.markCompleted(job.id);
