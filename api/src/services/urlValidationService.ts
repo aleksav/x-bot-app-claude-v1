@@ -2,6 +2,8 @@ import { postRepository } from '../repositories/postRepository.js';
 
 const URL_REGEX = /https?:\/\/[^\s)>\]"]+/g;
 const REQUEST_TIMEOUT_MS = 5000;
+const USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 export type UrlValidationResult = {
   url: string;
@@ -19,8 +21,10 @@ export async function validateUrls(urls: string[]): Promise<UrlValidationResult[
 
 async function validateSingleUrl(url: string): Promise<UrlValidationResult> {
   try {
+    const headers = { 'User-Agent': USER_AGENT };
     const response = await fetch(url, {
       method: 'HEAD',
+      headers,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       redirect: 'follow',
     });
@@ -29,6 +33,7 @@ async function validateSingleUrl(url: string): Promise<UrlValidationResult> {
     if (response.status === 405) {
       const getResponse = await fetch(url, {
         method: 'GET',
+        headers,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         redirect: 'follow',
       });
