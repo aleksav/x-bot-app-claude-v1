@@ -16,6 +16,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FlagIcon from '@mui/icons-material/Flag';
+import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag';
 import type { Post, PostStatus } from '../hooks/usePosts';
 import { useUpdatePost, useTweakPost, useAcceptTweak, useDeletePost } from '../hooks/usePosts';
 import {
@@ -99,6 +101,10 @@ export default function PostCard({ post }: PostCardProps) {
 
   const handleRatingChange = (_event: React.SyntheticEvent, value: number | null) => {
     updatePost.mutate({ id: post.id, rating: value });
+  };
+
+  const handleToggleFlag = () => {
+    updatePost.mutate({ id: post.id, flagged: !post.flagged });
   };
 
   const handleOpenTweak = () => {
@@ -198,6 +204,23 @@ export default function PostCard({ post }: PostCardProps) {
             {post.flagged && (
               <Tooltip title={post.flagReasons.join('\n')}>
                 <Chip label="Flagged" color="warning" size="small" />
+              </Tooltip>
+            )}
+            {post.status !== 'published' && (
+              <Tooltip title={post.flagged ? 'Unflag this post' : 'Flag this post'}>
+                <IconButton
+                  size="small"
+                  onClick={handleToggleFlag}
+                  disabled={updatePost.isPending}
+                  color={post.flagged ? 'warning' : 'default'}
+                  sx={{ p: 0.25 }}
+                >
+                  {post.flagged ? (
+                    <FlagIcon fontSize="small" />
+                  ) : (
+                    <OutlinedFlagIcon fontSize="small" />
+                  )}
+                </IconButton>
               </Tooltip>
             )}
           </Box>

@@ -34,6 +34,7 @@ type UpdatePostInput = {
   content?: string;
   status?: PostStatus;
   rating?: number | null;
+  flagged?: boolean;
 };
 
 export function usePosts(status?: string, page = 1, pageSize = 10, showAll = false) {
