@@ -134,6 +134,8 @@ export const postRepository = {
       rating?: number | null;
       scheduledAt?: Date | null;
       publishedAt?: Date | null;
+      flagged?: boolean;
+      flagReasons?: string[];
     },
   ) {
     return prisma.post.update({

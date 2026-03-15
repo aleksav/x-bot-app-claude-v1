@@ -9,6 +9,7 @@ type UpdatePostInput = {
   rating?: number | null;
   status?: 'draft' | 'scheduled' | 'discarded' | 'approved';
   scheduledAt?: string | null;
+  flagged?: boolean;
 };
 
 export const postService = {
@@ -74,6 +75,8 @@ export const postService = {
       rating?: number | null;
       scheduledAt?: Date | null;
       publishedAt?: Date | null;
+      flagged?: boolean;
+      flagReasons?: string[];
     } = {};
 
     if (input.content !== undefined) {
@@ -106,6 +109,14 @@ export const postService = {
     } else if (input.status === 'draft') {
       updateData.status = 'draft';
       updateData.scheduledAt = null;
+    }
+
+    if (input.flagged === true) {
+      updateData.flagged = true;
+      updateData.flagReasons = [...(post.flagReasons as string[]), 'Manually flagged by user'];
+    } else if (input.flagged === false) {
+      updateData.flagged = false;
+      updateData.flagReasons = [];
     }
 
     return postRepository.update(postId, updateData);

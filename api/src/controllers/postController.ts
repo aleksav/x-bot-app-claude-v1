@@ -18,6 +18,7 @@ const updatePostSchema = z.object({
   rating: z.number().int().min(1).max(5).nullable().optional(),
   status: z.enum(['draft', 'scheduled', 'discarded', 'approved']).optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
+  flagged: z.boolean().optional(),
 });
 
 const tweakPostSchema = z.object({
