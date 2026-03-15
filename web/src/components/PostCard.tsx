@@ -182,7 +182,10 @@ export default function PostCard({ post }: PostCardProps) {
   };
 
   const ratingEnabled =
-    post.status === 'draft' || post.status === 'approved' || post.status === 'scheduled' || post.status === 'published';
+    post.status === 'draft' ||
+    post.status === 'approved' ||
+    post.status === 'scheduled' ||
+    post.status === 'published';
 
   return (
     <Card sx={{ mb: 2 }}>

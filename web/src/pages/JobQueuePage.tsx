@@ -281,18 +281,12 @@ export default function JobQueuePage() {
               {JOB_TYPES.map((type) => (
                 <TableRow key={type}>
                   <TableCell>
-                    <Chip
-                      label={type}
-                      color={typeChipColors[type] ?? 'default'}
-                      size="small"
-                    />
+                    <Chip label={type} color={typeChipColors[type] ?? 'default'} size="small" />
                   </TableCell>
                   <TableCell>
                     {formatRelativeTime(data.lastCompletedByType[type] ?? null)}
                   </TableCell>
-                  <TableCell>
-                    {formatRelativeTime(data.nextPendingByType[type] ?? null)}
-                  </TableCell>
+                  <TableCell>{formatRelativeTime(data.nextPendingByType[type] ?? null)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

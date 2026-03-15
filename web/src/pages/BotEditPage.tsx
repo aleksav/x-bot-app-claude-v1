@@ -111,8 +111,7 @@ export default function BotEditPage() {
     const remainder = gap - perBehaviour * activeBehaviours.length;
     const newWeights: Record<string, number> = {};
     activeBehaviours.forEach((b, i) => {
-      const currentWeight =
-        editingWeights[b.id] !== undefined ? editingWeights[b.id] : b.weight;
+      const currentWeight = editingWeights[b.id] !== undefined ? editingWeights[b.id] : b.weight;
       newWeights[b.id] = currentWeight + perBehaviour + (i < remainder ? 1 : 0);
     });
     setEditingWeights((prev) => ({ ...prev, ...newWeights }));

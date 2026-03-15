@@ -19,7 +19,10 @@ export async function handlePublishJob(_jobId: string): Promise<void> {
   const approvedPosts = await postRepository.findApprovedReady(20);
 
   const posts = [...scheduledPosts, ...approvedPosts];
-  log('publish', `Found ${posts.length} post(s) ready to publish (${scheduledPosts.length} scheduled, ${approvedPosts.length} approved)`);
+  log(
+    'publish',
+    `Found ${posts.length} post(s) ready to publish (${scheduledPosts.length} scheduled, ${approvedPosts.length} approved)`,
+  );
 
   let published = 0;
   let rateLimited = 0;
@@ -96,5 +99,8 @@ export async function handlePublishJob(_jobId: string): Promise<void> {
     }
   }
 
-  log('publish', `Completed: ${published} published, ${rateLimited} rate-limited, ${failed} failed${skippedInterval > 0 ? `, ${skippedInterval} skipped (interval)` : ''}`);
+  log(
+    'publish',
+    `Completed: ${published} published, ${rateLimited} rate-limited, ${failed} failed${skippedInterval > 0 ? `, ${skippedInterval} skipped (interval)` : ''}`,
+  );
 }

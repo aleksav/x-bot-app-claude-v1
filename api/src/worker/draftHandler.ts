@@ -36,8 +36,7 @@ export async function handleDraftJob(jobId: string): Promise<void> {
       const tips = await botTipRepository.findByBotId(bot.id);
       const recentPosts = await postRepository.findRecentByBotId(bot.id, 10);
       const behaviours = await botBehaviourRepository.findActiveByBotId(bot.id);
-      const selectedBehaviour =
-        behaviours.length > 0 ? selectWeightedBehaviour(behaviours) : null;
+      const selectedBehaviour = behaviours.length > 0 ? selectWeightedBehaviour(behaviours) : null;
 
       const effectiveSource =
         selectedBehaviour?.knowledgeSource && selectedBehaviour.knowledgeSource !== 'default'
@@ -53,7 +52,11 @@ export async function handleDraftJob(jobId: string): Promise<void> {
       );
 
       if (!result.success) {
-        log('draft', `Bot ${bot.xAccountHandle || bot.id}: AI generation failed — ${result.error}`, 'error');
+        log(
+          'draft',
+          `Bot ${bot.xAccountHandle || bot.id}: AI generation failed — ${result.error}`,
+          'error',
+        );
         continue;
       }
 
@@ -82,7 +85,10 @@ export async function handleDraftJob(jobId: string): Promise<void> {
 
       drafted++;
       const status = bot.postMode === 'auto' && !isFlagged ? 'scheduled' : 'draft';
-      log('draft', `Bot ${bot.xAccountHandle || bot.id}: created ${status} post${isFlagged ? ' (flagged)' : ''}`);
+      log(
+        'draft',
+        `Bot ${bot.xAccountHandle || bot.id}: created ${status} post${isFlagged ? ' (flagged)' : ''}`,
+      );
     } catch (err) {
       log(
         'draft',

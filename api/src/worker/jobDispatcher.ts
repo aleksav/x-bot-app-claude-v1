@@ -90,7 +90,11 @@ async function processJobs(): Promise<void> {
         log('dispatcher', `Job ${job.id} (${job.type}) completed`);
       } catch (err) {
         const errorMsg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
-        log('dispatcher', `Job ${job.id} (${job.type}) failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+        log(
+          'dispatcher',
+          `Job ${job.id} (${job.type}) failed: ${err instanceof Error ? err.message : String(err)}`,
+          'error',
+        );
         await jobRepository.markFailed(job.id, errorMsg);
       } finally {
         try {
