@@ -230,16 +230,14 @@ export default function PostCard({ post }: PostCardProps) {
           </Typography>
         )}
 
-        {post.stylePrompt && (
+        {(post.styleTitle || post.stylePrompt) && (
           <Chip
-            label={`Style: ${post.stylePrompt}`}
+            label={`Style: ${post.styleTitle || post.stylePrompt}`}
             size="small"
             variant="outlined"
             sx={{
               mb: 1,
               maxWidth: '100%',
-              height: 'auto',
-              '& .MuiChip-label': { whiteSpace: 'normal' },
             }}
           />
         )}

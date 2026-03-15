@@ -37,7 +37,9 @@ export default function BotEditPage() {
   const deleteStyle = useDeleteBotStyle();
   const toggleStyle = useToggleBotStyle();
   const [newStyleContent, setNewStyleContent] = useState('');
+  const [newStyleTitle, setNewStyleTitle] = useState('');
   const [editingStyles, setEditingStyles] = useState<Record<string, string>>({});
+  const [editingTitles, setEditingTitles] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState(0);
 
   const bot = bots.find((b) => b.id === botId);
@@ -76,10 +78,12 @@ export default function BotEditPage() {
   // The "add new" tab is at index === styleCount (after all style tabs)
   const isAddTab = activeTab === styleCount;
 
-  function getTabLabel(style: { content: string; active: boolean }, index: number) {
+  function getTabLabel(style: { title: string; content: string; active: boolean }, index: number) {
     const prefix = `Style ${index + 1}`;
-    const preview = style.content.length > 20 ? style.content.slice(0, 20) + '...' : style.content;
-    const label = preview || prefix;
+    const label =
+      style.title ||
+      (style.content.length > 20 ? style.content.slice(0, 20) + '...' : style.content) ||
+      prefix;
     return style.active ? label : `(off) ${label}`;
   }
 
@@ -181,20 +185,46 @@ export default function BotEditPage() {
               <Box sx={{ p: 2 }}>
                 {styles?.map((style, index) => {
                   if (index !== activeTab) return null;
-                  const isEditing = editingStyles[style.id] !== undefined;
+                  const isEditing =
+                    editingStyles[style.id] !== undefined || editingTitles[style.id] !== undefined;
                   return (
                     <Box key={style.id}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Title"
+                        placeholder="e.g., Witty & Sarcastic"
+                        value={
+                          editingTitles[style.id] !== undefined
+                            ? editingTitles[style.id]
+                            : style.title
+                        }
+                        onChange={(e) =>
+                          setEditingTitles((prev) => ({ ...prev, [style.id]: e.target.value }))
+                        }
+                        onFocus={() => {
+                          if (editingTitles[style.id] === undefined) {
+                            setEditingTitles((prev) => ({ ...prev, [style.id]: style.title }));
+                          }
+                        }}
+                        sx={{ mb: 1 }}
+                      />
                       <TextField
                         fullWidth
                         multiline
                         minRows={3}
                         size="small"
-                        value={isEditing ? editingStyles[style.id] : style.content}
+                        label="Prompt"
+                        value={
+                          editingStyles[style.id] !== undefined
+                            ? editingStyles[style.id]
+                            : style.content
+                        }
                         onChange={(e) =>
                           setEditingStyles((prev) => ({ ...prev, [style.id]: e.target.value }))
                         }
                         onFocus={() => {
-                          if (!isEditing) {
+                          if (editingStyles[style.id] === undefined) {
                             setEditingStyles((prev) => ({ ...prev, [style.id]: style.content }));
                           }
                         }}
@@ -230,13 +260,24 @@ export default function BotEditPage() {
                               size="small"
                               startIcon={<SaveIcon />}
                               onClick={() => {
-                                const content = editingStyles[style.id];
+                                const content = editingStyles[style.id] ?? style.content;
+                                const title = editingTitles[style.id] ?? style.title;
                                 if (content && content.trim()) {
                                   updateStyle.mutate(
-                                    { botId: bot.id, styleId: style.id, content: content.trim() },
+                                    {
+                                      botId: bot.id,
+                                      styleId: style.id,
+                                      content: content.trim(),
+                                      title: title?.trim(),
+                                    },
                                     {
                                       onSuccess: () => {
                                         setEditingStyles((prev) => {
+                                          const next = { ...prev };
+                                          delete next[style.id];
+                                          return next;
+                                        });
+                                        setEditingTitles((prev) => {
                                           const next = { ...prev };
                                           delete next[style.id];
                                           return next;
@@ -280,9 +321,19 @@ export default function BotEditPage() {
                   <Box>
                     <TextField
                       fullWidth
+                      size="small"
+                      label="Title"
+                      placeholder="e.g., Witty & Sarcastic"
+                      value={newStyleTitle}
+                      onChange={(e) => setNewStyleTitle(e.target.value)}
+                      sx={{ mb: 1 }}
+                    />
+                    <TextField
+                      fullWidth
                       multiline
                       minRows={3}
                       size="small"
+                      label="Prompt"
                       placeholder="e.g., Write in a witty, sarcastic tone with pop culture references"
                       value={newStyleContent}
                       onChange={(e) => setNewStyleContent(e.target.value)}
@@ -295,10 +346,15 @@ export default function BotEditPage() {
                       onClick={() => {
                         if (newStyleContent.trim()) {
                           createStyle.mutate(
-                            { botId: bot.id, content: newStyleContent.trim() },
+                            {
+                              botId: bot.id,
+                              content: newStyleContent.trim(),
+                              title: newStyleTitle.trim() || undefined,
+                            },
                             {
                               onSuccess: () => {
                                 setNewStyleContent('');
+                                setNewStyleTitle('');
                                 setActiveTab(styleCount);
                               },
                             },
