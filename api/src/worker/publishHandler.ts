@@ -1,6 +1,11 @@
 import { postRepository } from '../repositories/postRepository.js';
 import { publishTweet } from '../services/xApiService.js';
-import { isLikePostDraft, handleLikePostPublish } from '../services/publishService.js';
+import {
+  isLikePostDraft,
+  handleLikePostPublish,
+  isReplyToPostDraft,
+  handleReplyToPostPublish,
+} from '../services/publishService.js';
 import { log } from './activityLog.js';
 
 const MAX_RETRIES = 3;
@@ -96,6 +101,34 @@ export async function handlePublishJob(_jobId: string): Promise<void> {
         log(
           'publish',
           `Like post ${post.id} failed (attempt ${newCount}/${MAX_RETRIES}): ${likeResult.error}`,
+          'error',
+        );
+        if (newCount >= MAX_RETRIES) {
+          await postRepository.update(post.id, { status: 'discarded' });
+          retryCounts.delete(post.id);
+        }
+      }
+    } else if (isReplyToPostDraft(post)) {
+      const replyResult = await handleReplyToPostPublish(post, bot);
+      if (replyResult.success) {
+        await postRepository.update(post.id, {
+          status: 'published',
+          publishedAt: new Date(),
+          metadata: replyResult.updatedMetadata,
+        });
+        retryCounts.delete(post.id);
+        published++;
+        log(
+          'publish',
+          `Published reply_to_post ${post.id} as tweet ${replyResult.tweetId ?? 'unknown'}`,
+        );
+      } else {
+        const newCount = currentRetries + 1;
+        retryCounts.set(post.id, newCount);
+        failed++;
+        log(
+          'publish',
+          `Reply post ${post.id} failed (attempt ${newCount}/${MAX_RETRIES}): ${replyResult.error}`,
           'error',
         );
         if (newCount >= MAX_RETRIES) {
