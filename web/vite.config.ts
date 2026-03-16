@@ -19,6 +19,7 @@ export default defineConfig({
   define: {
     __GIT_SHA__: JSON.stringify(git.sha),
     __GIT_DATE__: JSON.stringify(git.date),
+    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
   },
   server: {
     port: 3000,
