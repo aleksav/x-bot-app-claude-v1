@@ -169,7 +169,6 @@ export async function generateTweet(
       content: 'Understood, I will write in that style.',
     });
   }
-  messages.push({ role: 'user', content: 'Generate a tweet.' });
 
   // Capture the full prompt for storage
   const promptMessages: PromptMessage[] = [
