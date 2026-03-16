@@ -7,6 +7,8 @@ import { botTipRepository } from '../repositories/botTipRepository.js';
 import { botBehaviourRepository } from '../repositories/botBehaviourRepository.js';
 import { paginationSchema, uuidSchema } from '../utils/validation.js';
 import { checkAndFlagPost } from '../services/urlValidationService.js';
+import { generateLikePostDraft } from '../services/likePostService.js';
+import { prisma } from '../utils/prisma.js';
 
 const createBotSchema = z.object({
   platform: z.enum(['x']).default('x'),
@@ -198,6 +200,31 @@ export const botController = {
 
       if (!behaviour || behaviour.botId !== bot.id) {
         res.status(404).json({ error: 'Behaviour not found' });
+        return;
+      }
+
+      // Route like_post outcomes to the dedicated handler
+      if (behaviour.outcome === 'like_post') {
+        const fullBot = await prisma.bot.findUnique({ where: { id: bot.id } });
+        if (!fullBot || !fullBot.xAccessToken || !fullBot.xAccessSecret) {
+          res.status(400).json({ error: 'Bot X credentials not configured' });
+          return;
+        }
+        const post = await generateLikePostDraft(
+          {
+            id: fullBot.id,
+            prompt: fullBot.prompt,
+            xAccessToken: fullBot.xAccessToken,
+            xAccessSecret: fullBot.xAccessSecret,
+            xAccountHandle: fullBot.xAccountHandle ?? '',
+          },
+          behaviour,
+        );
+        if (!post) {
+          res.status(500).json({ error: 'Like post generation failed' });
+          return;
+        }
+        res.status(201).json({ data: { post } });
         return;
       }
 

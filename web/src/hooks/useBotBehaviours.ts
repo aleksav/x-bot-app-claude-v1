@@ -122,7 +122,12 @@ export function useDeleteBotBehaviour() {
 }
 
 export type QuickRunResult = {
-  post: { id: string; content: string };
+  post: {
+    id: string;
+    content: string;
+    metadata?: string | null;
+    generationPrompt?: string | null;
+  };
 };
 
 export function useQuickRunBehaviour() {

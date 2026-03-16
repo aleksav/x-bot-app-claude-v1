@@ -29,7 +29,7 @@ type ProcessVisualisationDialogProps = {
   steps: ProcessStep[];
 };
 
-function StepCard({ step, index }: { step: ProcessStep; index: number }) {
+export function StepCard({ step, index }: { step: ProcessStep; index: number }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
