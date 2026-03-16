@@ -6,6 +6,7 @@ import { apiClient } from '../lib/apiClient';
 
 declare const __GIT_SHA__: string;
 declare const __GIT_DATE__: string;
+declare const __BUILD_TIMESTAMP__: string;
 
 export default function AppFooter() {
   const [apiSha, setApiSha] = useState<string | null>(null);
@@ -18,6 +19,15 @@ export default function AppFooter() {
   }, []);
 
   const mismatch = apiSha !== null && apiSha !== 'dev' && apiSha !== __GIT_SHA__;
+
+  const buildDate = (() => {
+    try {
+      const d = new Date(__BUILD_TIMESTAMP__);
+      return d.toISOString().replace('T', ' ').slice(0, 16);
+    } catch {
+      return __BUILD_TIMESTAMP__;
+    }
+  })();
 
   return (
     <Box
@@ -35,6 +45,9 @@ export default function AppFooter() {
     >
       <Typography variant="caption" color="text.secondary">
         by EHE Venture Studio
+      </Typography>
+      <Typography variant="caption" color="text.disabled">
+        Build: {buildDate}
       </Typography>
       <Tooltip
         title={
