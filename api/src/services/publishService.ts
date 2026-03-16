@@ -1,4 +1,4 @@
-import { publishTweet, likeTweet } from './xApiService.js';
+import { publishTweet, likeTweet, replyTweet } from './xApiService.js';
 
 /**
  * Check if a post is a like_post outcome by inspecting its metadata.
@@ -24,6 +24,97 @@ export function isLikePostDraft(post: {
     }
   }
   return false;
+}
+
+/**
+ * Check if a post is a reply_to_post outcome by inspecting its metadata.
+ */
+export function isReplyToPostDraft(post: {
+  metadata?: string | null;
+  generationPrompt?: string | null;
+}): boolean {
+  if (post.metadata) {
+    try {
+      const meta = JSON.parse(post.metadata);
+      if (meta.outcome === 'reply_to_post') return true;
+    } catch {
+      // ignore parse errors
+    }
+  }
+  if (post.generationPrompt) {
+    try {
+      const gen = JSON.parse(post.generationPrompt);
+      if (gen.outcome === 'reply_to_post') return true;
+    } catch {
+      // ignore parse errors
+    }
+  }
+  return false;
+}
+
+/**
+ * Handle publishing a reply_to_post draft: post reply via X API.
+ */
+export async function handleReplyToPostPublish(
+  post: { id: string; metadata?: string | null; content: string },
+  bot: { id: string; xAccessToken: string; xAccessSecret: string; xAccountHandle: string },
+): Promise<{
+  success: boolean;
+  tweetId?: string;
+  error?: string;
+  updatedMetadata?: string;
+}> {
+  let replyToTweetId: string | undefined;
+
+  // Get replyToTweetId from metadata
+  if (post.metadata) {
+    try {
+      const meta = JSON.parse(post.metadata);
+      replyToTweetId = meta.replyToTweetId;
+    } catch {
+      // fall through
+    }
+  }
+
+  if (!replyToTweetId) {
+    return {
+      success: false,
+      error: 'No replyToTweetId found in post metadata',
+    };
+  }
+
+  const result = await replyTweet(
+    post.content,
+    replyToTweetId,
+    bot.xAccessToken,
+    bot.xAccessSecret,
+    bot.id,
+  );
+
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  // Update metadata with publish results
+  let updatedMetadata: string | undefined;
+  try {
+    const existingMeta = post.metadata ? JSON.parse(post.metadata) : {};
+    updatedMetadata = JSON.stringify({
+      ...existingMeta,
+      publishResults: {
+        publishedTweetId: result.tweetId,
+        replyToTweetId,
+      },
+    });
+  } catch {
+    updatedMetadata = undefined;
+  }
+
+  return {
+    success: true,
+    tweetId: result.tweetId,
+    updatedMetadata,
+  };
 }
 
 /**
@@ -132,6 +223,16 @@ export async function publishPostNow(
 
   if (isLike) {
     const result = await handleLikePostPublish(post, bot);
+    if (result.success) {
+      return { success: true, updatedMetadata: result.updatedMetadata };
+    }
+    return { success: false, error: result.error };
+  }
+
+  const isReply = isReplyToPostDraft(post);
+
+  if (isReply) {
+    const result = await handleReplyToPostPublish(post, bot);
     if (result.success) {
       return { success: true, updatedMetadata: result.updatedMetadata };
     }

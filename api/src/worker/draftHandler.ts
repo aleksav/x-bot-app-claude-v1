@@ -6,6 +6,7 @@ import { selectWeightedBehaviour } from '../controllers/botController.js';
 import { generateTweet, OUTCOME_PROMPT_KEY_MAP } from '../services/aiService.js';
 import { checkAndFlagPost } from '../services/urlValidationService.js';
 import { generateLikePostDraft } from '../services/likePostService.js';
+import { generateReplyPostDraft } from '../services/replyPostService.js';
 import { log } from './activityLog.js';
 
 /**
@@ -42,6 +43,13 @@ export async function handleDraftJob(jobId: string): Promise<void> {
       // Route like_post outcomes to the dedicated handler
       if (selectedBehaviour?.outcome === 'like_post') {
         await generateLikePostDraft(bot, selectedBehaviour, jobId);
+        drafted++;
+        continue;
+      }
+
+      // Route reply_to_post outcomes to the dedicated handler
+      if (selectedBehaviour?.outcome === 'reply_to_post') {
+        await generateReplyPostDraft(bot, selectedBehaviour, jobId);
         drafted++;
         continue;
       }

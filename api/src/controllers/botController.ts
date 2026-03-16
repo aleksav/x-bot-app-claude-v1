@@ -8,6 +8,7 @@ import { botBehaviourRepository } from '../repositories/botBehaviourRepository.j
 import { paginationSchema, uuidSchema } from '../utils/validation.js';
 import { checkAndFlagPost } from '../services/urlValidationService.js';
 import { generateLikePostDraft } from '../services/likePostService.js';
+import { generateReplyPostDraft } from '../services/replyPostService.js';
 import { prisma } from '../utils/prisma.js';
 
 const createBotSchema = z.object({
@@ -174,6 +175,39 @@ export const botController = {
           continue;
         }
 
+        // Route reply_to_post behaviours to the dedicated handler
+        if (selectedBehaviour?.outcome === 'reply_to_post') {
+          try {
+            const fullBot = await prisma.bot.findUnique({ where: { id: bot.id } });
+            if (!fullBot || !fullBot.xAccessToken || !fullBot.xAccessSecret) {
+              errors.push('Bot X credentials not configured for reply_to_post');
+              continue;
+            }
+            const post = await generateReplyPostDraft(
+              {
+                id: fullBot.id,
+                prompt: fullBot.prompt,
+                xAccessToken: fullBot.xAccessToken,
+                xAccessSecret: fullBot.xAccessSecret,
+                xAccountHandle: fullBot.xAccountHandle ?? '',
+              },
+              selectedBehaviour,
+            );
+            if (post) {
+              posts.push(post);
+            } else {
+              errors.push('Reply post generation failed');
+            }
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Reply post generation error';
+            console.error(
+              `Reply post draft generation failed for bot ${bot.id} (attempt ${i + 1}/${count}): ${errorMessage}`,
+            );
+            errors.push(errorMessage);
+          }
+          continue;
+        }
+
         const effectiveSource =
           selectedBehaviour?.knowledgeSource && selectedBehaviour.knowledgeSource !== 'default'
             ? selectedBehaviour.knowledgeSource
@@ -256,6 +290,31 @@ export const botController = {
         );
         if (!post) {
           res.status(500).json({ error: 'Like post generation failed' });
+          return;
+        }
+        res.status(201).json({ data: { post } });
+        return;
+      }
+
+      // Route reply_to_post outcomes to the dedicated handler
+      if (behaviour.outcome === 'reply_to_post') {
+        const fullBot = await prisma.bot.findUnique({ where: { id: bot.id } });
+        if (!fullBot || !fullBot.xAccessToken || !fullBot.xAccessSecret) {
+          res.status(400).json({ error: 'Bot X credentials not configured' });
+          return;
+        }
+        const post = await generateReplyPostDraft(
+          {
+            id: fullBot.id,
+            prompt: fullBot.prompt,
+            xAccessToken: fullBot.xAccessToken,
+            xAccessSecret: fullBot.xAccessSecret,
+            xAccountHandle: fullBot.xAccountHandle ?? '',
+          },
+          behaviour,
+        );
+        if (!post) {
+          res.status(500).json({ error: 'Reply post generation failed' });
           return;
         }
         res.status(201).json({ data: { post } });
