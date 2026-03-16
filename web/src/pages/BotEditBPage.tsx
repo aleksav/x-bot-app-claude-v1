@@ -26,12 +26,14 @@ import Alert from '@mui/material/Alert';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import AppHeader from '../components/AppHeader';
+import { StepCard, type ProcessStep } from '../components/ProcessVisualisationDialog';
 import { useBot, useUpdateBot, useBotTips } from '../hooks/useBot';
 import { useDeletePost } from '../hooks/usePosts';
 import {
@@ -96,6 +98,7 @@ export default function BotEditBPage() {
   const [testRunResult, setTestRunResult] = useState<{
     postId: string;
     content: string;
+    metadata?: string | null;
   } | null>(null);
   const [testRunError, setTestRunError] = useState<string | null>(null);
 
@@ -200,7 +203,11 @@ export default function BotEditBPage() {
       {
         onSuccess: (data) => {
           setTestRunLoading(false);
-          setTestRunResult({ postId: data.post.id, content: data.post.content });
+          setTestRunResult({
+            postId: data.post.id,
+            content: data.post.content,
+            metadata: data.post.metadata,
+          });
         },
         onError: (err: unknown) => {
           setTestRunLoading(false);
@@ -780,6 +787,52 @@ export default function BotEditBPage() {
                           </Typography>
                         </CardContent>
                       </Card>
+                      {/* Process visualisation for like_post results */}
+                      {(() => {
+                        if (!testRunResult.metadata) return null;
+                        try {
+                          const parsed = JSON.parse(testRunResult.metadata) as {
+                            outcome?: string;
+                            processSteps?: ProcessStep[];
+                          };
+                          if (
+                            parsed.outcome === 'like_post' &&
+                            Array.isArray(parsed.processSteps) &&
+                            parsed.processSteps.length > 0
+                          ) {
+                            return (
+                              <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                  Process Visualisation
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                  {parsed.processSteps.map(
+                                    (step: ProcessStep, idx: number, arr: ProcessStep[]) => (
+                                      <Box key={idx}>
+                                        <StepCard step={step} index={idx} />
+                                        {idx < arr.length - 1 && (
+                                          <Box
+                                            sx={{
+                                              display: 'flex',
+                                              justifyContent: 'center',
+                                              py: 0.5,
+                                            }}
+                                          >
+                                            <ArrowDownwardIcon color="action" />
+                                          </Box>
+                                        )}
+                                      </Box>
+                                    ),
+                                  )}
+                                </Box>
+                              </Box>
+                            );
+                          }
+                          return null;
+                        } catch {
+                          return null;
+                        }
+                      })()}
                       <Box sx={{ display: 'flex', gap: 1, mt: 1, justifyContent: 'flex-end' }}>
                         <Button
                           size="small"

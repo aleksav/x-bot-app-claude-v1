@@ -140,6 +140,40 @@ export const botController = {
         const recentContents = recentPosts.map((p: { content: string }) => p.content);
         const selectedBehaviour =
           behaviours.length > 0 ? selectWeightedBehaviour(behaviours) : null;
+
+        // Route like_post behaviours to the dedicated handler
+        if (selectedBehaviour?.outcome === 'like_post') {
+          try {
+            const fullBot = await prisma.bot.findUnique({ where: { id: bot.id } });
+            if (!fullBot || !fullBot.xAccessToken || !fullBot.xAccessSecret) {
+              errors.push('Bot X credentials not configured for like_post');
+              continue;
+            }
+            const post = await generateLikePostDraft(
+              {
+                id: fullBot.id,
+                prompt: fullBot.prompt,
+                xAccessToken: fullBot.xAccessToken,
+                xAccessSecret: fullBot.xAccessSecret,
+                xAccountHandle: fullBot.xAccountHandle ?? '',
+              },
+              selectedBehaviour,
+            );
+            if (post) {
+              posts.push(post);
+            } else {
+              errors.push('Like post generation failed');
+            }
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Like post generation error';
+            console.error(
+              `Like post draft generation failed for bot ${bot.id} (attempt ${i + 1}/${count}): ${errorMessage}`,
+            );
+            errors.push(errorMessage);
+          }
+          continue;
+        }
+
         const effectiveSource =
           selectedBehaviour?.knowledgeSource && selectedBehaviour.knowledgeSource !== 'default'
             ? selectedBehaviour.knowledgeSource

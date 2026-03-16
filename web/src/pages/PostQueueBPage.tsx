@@ -9,16 +9,24 @@ import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Rating from '@mui/material/Rating';
 import Skeleton from '@mui/material/Skeleton';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckIcon from '@mui/icons-material/Check';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import FileCopyOutlinedIcon from '@mui/icons-material/FileCopyOutlined';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FlagIcon from '@mui/icons-material/Flag';
 import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag';
 import RestoreIcon from '@mui/icons-material/Restore';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import AppHeader from '../components/AppHeader';
+import ProcessVisualisationDialog, {
+  type ProcessStep,
+} from '../components/ProcessVisualisationDialog';
 import { useAuth } from '../hooks/useAuth';
 import {
   usePosts,
@@ -61,10 +69,13 @@ function timeAgo(dateStr: string): string {
 
 export default function PostQueueBPage() {
   const { user } = useAuth();
-  const [activeFilter, setActiveFilter] = useState<PostStatus | undefined>(undefined);
+  const [activeFilter, setActiveFilter] = useState<PostStatus | undefined>('draft');
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [contentCopied, setContentCopied] = useState<string | null>(null);
+  const [promptCopied, setPromptCopied] = useState<string | null>(null);
+  const [processDialogPostId, setProcessDialogPostId] = useState<string | null>(null);
 
   const { data: counts } = usePostCounts(showAll);
   const { data, isLoading } = usePosts(activeFilter, page, 15, showAll);
@@ -150,6 +161,31 @@ export default function PostQueueBPage() {
             <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
               {posts.map((post, index) => {
                 const isExpanded = expandedId === post.id;
+                // Parse metadata for like_post process steps
+                const parsedMetadata = (() => {
+                  if (!post.metadata) return null;
+                  try {
+                    const parsed = JSON.parse(post.metadata) as {
+                      outcome?: string;
+                      processSteps?: ProcessStep[];
+                    };
+                    if (
+                      parsed.outcome === 'like_post' &&
+                      Array.isArray(parsed.processSteps) &&
+                      parsed.processSteps.length > 0
+                    ) {
+                      return parsed;
+                    }
+                    return null;
+                  } catch {
+                    return null;
+                  }
+                })();
+                const hasProcessSteps =
+                  parsedMetadata !== null &&
+                  parsedMetadata.processSteps !== undefined &&
+                  parsedMetadata.processSteps.length > 0;
+
                 return (
                   <Box key={post.id}>
                     {/* Compact row */}
@@ -165,6 +201,7 @@ export default function PostQueueBPage() {
                         borderBottom: index < posts.length - 1 || isExpanded ? '1px solid' : 'none',
                         borderColor: 'divider',
                         '&:hover': { bgcolor: 'action.hover' },
+                        '&:hover .row-hover-actions': { opacity: 1 },
                       }}
                     >
                       <Chip
@@ -204,50 +241,85 @@ export default function PostQueueBPage() {
                       >
                         {timeAgo(post.createdAt)}
                       </Typography>
-                      {/* Inline action icons */}
-                      <Box sx={{ display: 'flex', gap: 0.25 }} onClick={(e) => e.stopPropagation()}>
+                      {/* Hover action icons */}
+                      <Box
+                        className="row-hover-actions"
+                        sx={{
+                          display: 'flex',
+                          gap: 0.25,
+                          opacity: 0,
+                          transition: 'opacity 0.15s',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {post.status === 'draft' && (
                           <>
-                            <IconButton
-                              size="small"
-                              color="success"
-                              onClick={() => updatePost.mutate({ id: post.id, status: 'approved' })}
-                              disabled={updatePost.isPending}
-                            >
-                              <CheckCircleIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                updatePost.mutate({ id: post.id, status: 'scheduled' })
-                              }
-                              disabled={updatePost.isPending}
-                            >
-                              <ScheduleIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() =>
-                                updatePost.mutate({ id: post.id, status: 'discarded' })
-                              }
-                              disabled={updatePost.isPending}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            <Tooltip title="Approve">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() =>
+                                  updatePost.mutate({ id: post.id, status: 'approved' })
+                                }
+                                disabled={updatePost.isPending}
+                              >
+                                <CheckCircleIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Schedule">
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  updatePost.mutate({ id: post.id, status: 'scheduled' })
+                                }
+                                disabled={updatePost.isPending}
+                              >
+                                <ScheduleIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Discard">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() =>
+                                  updatePost.mutate({ id: post.id, status: 'discarded' })
+                                }
+                                disabled={updatePost.isPending}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </>
                         )}
                         {post.status === 'approved' && (
                           <>
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                updatePost.mutate({ id: post.id, status: 'scheduled' })
-                              }
-                              disabled={updatePost.isPending}
-                            >
-                              <ScheduleIcon fontSize="small" />
-                            </IconButton>
+                            <Tooltip title="Schedule">
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  updatePost.mutate({ id: post.id, status: 'scheduled' })
+                                }
+                                disabled={updatePost.isPending}
+                              >
+                                <ScheduleIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Discard">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() =>
+                                  updatePost.mutate({ id: post.id, status: 'discarded' })
+                                }
+                                disabled={updatePost.isPending}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                        {post.status === 'scheduled' && (
+                          <Tooltip title="Discard">
                             <IconButton
                               size="small"
                               color="error"
@@ -258,39 +330,35 @@ export default function PostQueueBPage() {
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
-                          </>
-                        )}
-                        {post.status === 'scheduled' && (
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => updatePost.mutate({ id: post.id, status: 'discarded' })}
-                            disabled={updatePost.isPending}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                          </Tooltip>
                         )}
                         {post.status === 'discarded' && (
+                          <Tooltip title="Reinstate">
+                            <IconButton
+                              size="small"
+                              onClick={() => updatePost.mutate({ id: post.id, status: 'draft' })}
+                              disabled={updatePost.isPending}
+                            >
+                              <RestoreIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        <Tooltip title={post.flagged ? 'Unflag' : 'Flag'}>
                           <IconButton
                             size="small"
-                            onClick={() => updatePost.mutate({ id: post.id, status: 'draft' })}
-                            disabled={updatePost.isPending}
+                            color={post.flagged ? 'warning' : 'default'}
+                            onClick={() =>
+                              updatePost.mutate({ id: post.id, flagged: !post.flagged })
+                            }
+                            disabled={updatePost.isPending || post.status === 'published'}
                           >
-                            <RestoreIcon fontSize="small" />
+                            {post.flagged ? (
+                              <FlagIcon fontSize="small" />
+                            ) : (
+                              <OutlinedFlagIcon fontSize="small" />
+                            )}
                           </IconButton>
-                        )}
-                        <IconButton
-                          size="small"
-                          color={post.flagged ? 'warning' : 'default'}
-                          onClick={() => updatePost.mutate({ id: post.id, flagged: !post.flagged })}
-                          disabled={updatePost.isPending || post.status === 'published'}
-                        >
-                          {post.flagged ? (
-                            <FlagIcon fontSize="small" />
-                          ) : (
-                            <OutlinedFlagIcon fontSize="small" />
-                          )}
-                        </IconButton>
+                        </Tooltip>
                       </Box>
                     </Box>
 
@@ -305,9 +373,32 @@ export default function PostQueueBPage() {
                           borderColor: 'divider',
                         }}
                       >
-                        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
-                          {post.content}
-                        </Typography>
+                        <Box sx={{ position: 'relative' }}>
+                          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 2, pr: 4 }}>
+                            {post.content}
+                          </Typography>
+                          <Tooltip
+                            title={contentCopied === post.id ? 'Copied!' : 'Copy post content'}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                navigator.clipboard.writeText(post.content).then(() => {
+                                  setContentCopied(post.id);
+                                  setTimeout(() => setContentCopied(null), 1500);
+                                });
+                              }}
+                              sx={{ position: 'absolute', top: -4, right: -4, p: 0.25 }}
+                              color={contentCopied === post.id ? 'success' : 'default'}
+                            >
+                              {contentCopied === post.id ? (
+                                <CheckIcon fontSize="small" />
+                              ) : (
+                                <FileCopyOutlinedIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                         <Box
                           sx={{
                             display: 'flex',
@@ -322,6 +413,38 @@ export default function PostQueueBPage() {
                               size="small"
                               variant="outlined"
                             />
+                          )}
+                          {post.generationPrompt && (
+                            <Tooltip title={promptCopied === post.id ? 'Copied!' : 'Copy prompt'}>
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(post.generationPrompt!).then(() => {
+                                    setPromptCopied(post.id);
+                                    setTimeout(() => setPromptCopied(null), 1500);
+                                  });
+                                }}
+                                sx={{ p: 0.25 }}
+                                color={promptCopied === post.id ? 'success' : 'default'}
+                              >
+                                {promptCopied === post.id ? (
+                                  <CheckIcon fontSize="small" />
+                                ) : (
+                                  <ContentCopyIcon fontSize="small" />
+                                )}
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {hasProcessSteps && (
+                            <Tooltip title="View like post process">
+                              <IconButton
+                                size="small"
+                                onClick={() => setProcessDialogPostId(post.id)}
+                                sx={{ p: 0.25 }}
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           )}
                           {post.scheduledAt && (
                             <Typography variant="caption" color="text.secondary">
@@ -441,6 +564,14 @@ export default function PostQueueBPage() {
                           )}
                         </Box>
                       </Box>
+                      {/* Process Visualisation Dialog for this post */}
+                      {hasProcessSteps && (
+                        <ProcessVisualisationDialog
+                          open={processDialogPostId === post.id}
+                          onClose={() => setProcessDialogPostId(null)}
+                          steps={parsedMetadata!.processSteps!}
+                        />
+                      )}
                     </Collapse>
                   </Box>
                 );
