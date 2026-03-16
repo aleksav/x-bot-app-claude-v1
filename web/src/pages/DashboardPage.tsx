@@ -324,18 +324,35 @@ export default function DashboardPage() {
               generateDrafts.mutate(
                 { botId: bot.id, count: 3 },
                 {
-                  onSuccess: (posts) => {
-                    showSnackbar(
-                      `Generated ${posts.length} practice draft(s)`,
-                      'success',
-                      <Button
-                        color="inherit"
-                        size="small"
-                        onClick={() => void navigate({ to: '/posts' })}
-                      >
-                        View Drafts
-                      </Button>,
-                    );
+                  onSuccess: (result) => {
+                    const { posts, errors } = result;
+                    if (posts.length === 0 && errors.length > 0) {
+                      showSnackbar(`Failed to generate drafts: ${errors[0]}`, 'error');
+                    } else if (errors.length > 0) {
+                      showSnackbar(
+                        `Generated ${posts.length} draft(s). ${errors.length} failed: ${errors[0]}`,
+                        'error',
+                        <Button
+                          color="inherit"
+                          size="small"
+                          onClick={() => void navigate({ to: '/posts' })}
+                        >
+                          View Drafts
+                        </Button>,
+                      );
+                    } else {
+                      showSnackbar(
+                        `Generated ${posts.length} practice draft(s)`,
+                        'success',
+                        <Button
+                          color="inherit"
+                          size="small"
+                          onClick={() => void navigate({ to: '/posts' })}
+                        >
+                          View Drafts
+                        </Button>,
+                      );
+                    }
                   },
                   onError: () => {
                     showSnackbar('Failed to generate drafts', 'error');
