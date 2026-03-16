@@ -127,6 +127,7 @@ export const botController = {
       const behaviours = await botBehaviourRepository.findActiveByBotId(bot.id);
 
       const posts = [];
+      const errors: string[] = [];
       for (let i = 0; i < count; i++) {
         const recentPosts = await postRepository.findRecentByBotId(bot.id, 10);
         const recentContents = recentPosts.map((p: { content: string }) => p.content);
@@ -165,11 +166,17 @@ export const botController = {
           // Fire-and-forget URL validation — don't block the response
           checkAndFlagPost(post.id).catch(console.error);
           posts.push(post);
+        } else {
+          const errorMessage = result.error || 'Unknown generation error';
+          console.error(
+            `Draft generation failed for bot ${bot.id} (attempt ${i + 1}/${count}): ${errorMessage}`,
+          );
+          errors.push(errorMessage);
         }
       }
 
       res.status(201).json({
-        data: posts,
+        data: { posts, errors },
       });
     } catch (err) {
       next(err);

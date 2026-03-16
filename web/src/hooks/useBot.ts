@@ -143,12 +143,17 @@ export function useUpdateBot() {
   });
 }
 
+export type GenerateDraftsResult = {
+  posts: Array<{ id: string; content: string }>;
+  errors: string[];
+};
+
 export function useGenerateDrafts() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ botId, count = 3 }: { botId: string; count?: number }) => {
-      const response = await apiClient.post<{ data: Array<{ id: string; content: string }> }>(
+      const response = await apiClient.post<{ data: GenerateDraftsResult }>(
         `/bots/${botId}/generate-drafts`,
         { count },
       );
