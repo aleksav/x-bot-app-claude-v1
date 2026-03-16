@@ -31,6 +31,8 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import AppHeader from '../components/AppHeader';
 import BotSetupForm from '../components/BotSetupForm';
+import { useDashboardVersion } from '../contexts/DashboardVersionContext';
+import DashboardBPage from './DashboardBPage';
 import {
   useBot,
   useCreateBot,
@@ -58,6 +60,12 @@ type SnackbarState = {
 };
 
 export default function DashboardPage() {
+  const { version } = useDashboardVersion();
+  if (version === 'B') return <DashboardBPage />;
+  return <DashboardAPage />;
+}
+
+function DashboardAPage() {
   const { user } = useAuth();
   const { bots, isLoading } = useBot();
   const createBot = useCreateBot();

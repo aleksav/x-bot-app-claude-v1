@@ -17,6 +17,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 import { usePosts, usePostCounts, useDeleteAllDiscarded } from '../hooks/usePosts';
+import { useDashboardVersion } from '../contexts/DashboardVersionContext';
+import PostQueueBPage from './PostQueueBPage';
 
 const TAB_CONFIG = [
   { label: 'Drafts', status: 'draft', emptyMessage: 'No drafts yet' },
@@ -44,6 +46,12 @@ const TAB_CONFIG = [
 ] as const;
 
 export default function PostsPage() {
+  const { version } = useDashboardVersion();
+  if (version === 'B') return <PostQueueBPage />;
+  return <PostsAPage />;
+}
+
+function PostsAPage() {
   const { user } = useAuth();
   const [tabIndex, setTabIndex] = useState(0);
   const [page, setPage] = useState(1);

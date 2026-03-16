@@ -29,6 +29,8 @@ import Select from '@mui/material/Select';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import AppHeader from '../components/AppHeader';
 import BotSetupForm from '../components/BotSetupForm';
+import { useDashboardVersion } from '../contexts/DashboardVersionContext';
+import BotEditBPage from './BotEditBPage';
 import { StepCard, type ProcessStep } from '../components/ProcessVisualisationDialog';
 import { useBot, useUpdateBot } from '../hooks/useBot';
 import { useDeletePost } from '../hooks/usePosts';
@@ -43,6 +45,12 @@ import {
 import { useNavigate, useParams } from '@tanstack/react-router';
 
 export default function BotEditPage() {
+  const { version } = useDashboardVersion();
+  if (version === 'B') return <BotEditBPage />;
+  return <BotEditAPage />;
+}
+
+function BotEditAPage() {
   const { botId } = useParams({ strict: false }) as { botId: string };
   const { bots, isLoading } = useBot();
   const updateBot = useUpdateBot();
