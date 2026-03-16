@@ -131,12 +131,12 @@ async function selectPostsToLike(
 export async function generateLikePostDraft(
   bot: BotForLikePost,
   behaviour: BehaviourForLikePost,
-  jobId: string,
-): Promise<void> {
+  jobId?: string,
+) {
   const client = getClient();
   if (!client) {
     log('draft', `Bot ${bot.xAccountHandle || bot.id}: AI service not configured`, 'error');
-    return;
+    return null;
   }
 
   // Get the like_evaluation system prompt
@@ -174,7 +174,7 @@ export async function generateLikePostDraft(
       `Bot ${bot.xAccountHandle || bot.id}: failed to generate search queries — ${err instanceof Error ? err.message : String(err)}`,
       'error',
     );
-    return;
+    return null;
   }
 
   if (queries.length === 0) {
@@ -183,7 +183,7 @@ export async function generateLikePostDraft(
       `Bot ${bot.xAccountHandle || bot.id}: no search queries generated, skipping like_post`,
       'warn',
     );
-    return;
+    return null;
   }
 
   // Step 2: Search X API for each query
@@ -223,7 +223,7 @@ export async function generateLikePostDraft(
       `Bot ${bot.xAccountHandle || bot.id}: no tweets found from search, skipping like_post`,
       'warn',
     );
-    return;
+    return null;
   }
 
   // Limit to top 15 candidates
@@ -267,7 +267,7 @@ export async function generateLikePostDraft(
       `Bot ${bot.xAccountHandle || bot.id}: AI selection failed — ${err instanceof Error ? err.message : String(err)}`,
       'error',
     );
-    return;
+    return null;
   }
 
   if (selectedIds.length === 0) {
@@ -276,7 +276,7 @@ export async function generateLikePostDraft(
       `Bot ${bot.xAccountHandle || bot.id}: AI selected no posts to like, skipping`,
       'warn',
     );
-    return;
+    return null;
   }
 
   // Step 4: Build draft content
@@ -322,7 +322,7 @@ export async function generateLikePostDraft(
     reasoning,
   });
 
-  await postRepository.create({
+  const post = await postRepository.create({
     botId: bot.id,
     jobId,
     content,
@@ -338,4 +338,6 @@ export async function generateLikePostDraft(
     'draft',
     `Bot ${bot.xAccountHandle || bot.id}: created like_post draft with ${selectedIds.length} tweets`,
   );
+
+  return post;
 }

@@ -26,8 +26,10 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import AppHeader from '../components/AppHeader';
 import BotSetupForm from '../components/BotSetupForm';
+import { StepCard, type ProcessStep } from '../components/ProcessVisualisationDialog';
 import { useBot, useUpdateBot } from '../hooks/useBot';
 import { useDeletePost } from '../hooks/usePosts';
 import {
@@ -68,8 +70,18 @@ export default function BotEditPage() {
     loading: boolean;
     postId: string | null;
     content: string | null;
+    metadata: string | null;
+    generationPrompt: string | null;
     error: string | null;
-  }>({ open: false, loading: false, postId: null, content: null, error: null });
+  }>({
+    open: false,
+    loading: false,
+    postId: null,
+    content: null,
+    metadata: null,
+    generationPrompt: null,
+    error: null,
+  });
 
   const bot = bots.find((b) => b.id === botId);
 
@@ -300,6 +312,8 @@ export default function BotEditPage() {
                               loading: true,
                               postId: null,
                               content: null,
+                              metadata: null,
+                              generationPrompt: null,
                               error: null,
                             });
                             quickRunBehaviour.mutate(
@@ -311,6 +325,8 @@ export default function BotEditPage() {
                                     loading: false,
                                     postId: data.post.id,
                                     content: data.post.content,
+                                    metadata: data.post.metadata ?? null,
+                                    generationPrompt: data.post.generationPrompt ?? null,
                                     error: null,
                                   });
                                 },
@@ -322,6 +338,8 @@ export default function BotEditPage() {
                                     loading: false,
                                     postId: null,
                                     content: null,
+                                    metadata: null,
+                                    generationPrompt: null,
                                     error: message,
                                   });
                                 },
@@ -671,10 +689,12 @@ export default function BotEditPage() {
             loading: false,
             postId: null,
             content: null,
+            metadata: null,
+            generationPrompt: null,
             error: null,
           })
         }
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>Quick Run Result</DialogTitle>
@@ -692,6 +712,45 @@ export default function BotEditPage() {
           {quickRunModal.content && (
             <Typography sx={{ py: 2, whiteSpace: 'pre-wrap' }}>{quickRunModal.content}</Typography>
           )}
+          {(() => {
+            if (!quickRunModal.metadata) return null;
+            try {
+              const parsed = JSON.parse(quickRunModal.metadata) as {
+                outcome?: string;
+                processSteps?: ProcessStep[];
+              };
+              if (
+                parsed.outcome === 'like_post' &&
+                Array.isArray(parsed.processSteps) &&
+                parsed.processSteps.length > 0
+              ) {
+                return (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="h6" sx={{ mb: 1 }}>
+                      Process Visualisation
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {parsed.processSteps.map(
+                        (step: ProcessStep, idx: number, arr: ProcessStep[]) => (
+                          <Box key={idx}>
+                            <StepCard step={step} index={idx} />
+                            {idx < arr.length - 1 && (
+                              <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
+                                <ArrowDownwardIcon color="action" />
+                              </Box>
+                            )}
+                          </Box>
+                        ),
+                      )}
+                    </Box>
+                  </Box>
+                );
+              }
+              return null;
+            } catch {
+              return null;
+            }
+          })()}
         </DialogContent>
         <DialogActions>
           {quickRunModal.postId && (
@@ -707,6 +766,8 @@ export default function BotEditPage() {
                     loading: false,
                     postId: null,
                     content: null,
+                    metadata: null,
+                    generationPrompt: null,
                     error: null,
                   });
                 }}
@@ -720,6 +781,8 @@ export default function BotEditPage() {
                     loading: false,
                     postId: null,
                     content: null,
+                    metadata: null,
+                    generationPrompt: null,
                     error: null,
                   });
                   void navigate({ to: '/posts' });
@@ -736,6 +799,8 @@ export default function BotEditPage() {
                 loading: false,
                 postId: null,
                 content: null,
+                metadata: null,
+                generationPrompt: null,
                 error: null,
               })
             }
