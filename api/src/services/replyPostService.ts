@@ -4,6 +4,7 @@ import { systemPromptRepository } from '../repositories/systemPromptRepository.j
 import { postRepository } from '../repositories/postRepository.js';
 import { DEFAULT_SYSTEM_PROMPTS } from '../constants/defaultSystemPrompts.js';
 import { log } from '../worker/activityLog.js';
+import { prisma } from '../utils/prisma.js';
 
 type BotForReplyPost = {
   id: string;
@@ -199,6 +200,55 @@ export async function generateReplyPostDraft(
     input: `@${bot.xAccountHandle} (user ID: ${userId})`,
     output: mentionSummaries,
   });
+
+  // Step 2b: Dedup — filter out mentions we have already replied to (or have pending drafts for)
+  const totalBeforeDedup = mentions.length;
+  try {
+    const recentPosts = await prisma.post.findMany({
+      where: {
+        botId: bot.id,
+        metadata: { not: null },
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+      select: { metadata: true },
+    });
+
+    const repliedTweetIds = new Set<string>();
+    for (const post of recentPosts) {
+      if (typeof post.metadata === 'string') {
+        try {
+          const parsed = JSON.parse(post.metadata) as Record<string, unknown>;
+          if (typeof parsed.replyToTweetId === 'string') {
+            repliedTweetIds.add(parsed.replyToTweetId);
+          }
+        } catch {
+          // skip unparseable metadata
+        }
+      }
+    }
+
+    if (repliedTweetIds.size > 0) {
+      mentions = mentions.filter((m) => !repliedTweetIds.has(m.id));
+    }
+  } catch (err) {
+    // Non-fatal: if dedup query fails, proceed with all mentions
+    console.error('Dedup query failed, proceeding without dedup:', err);
+  }
+
+  processSteps.push({
+    step: 'Dedup Filter',
+    input: `${totalBeforeDedup} mentions fetched`,
+    output: `${mentions.length} mentions remaining after filtering already-replied tweets`,
+  });
+
+  if (mentions.length === 0) {
+    log(
+      'draft',
+      `Bot ${bot.xAccountHandle || bot.id}: all ${totalBeforeDedup} mentions already replied to, skipping`,
+      'warn',
+    );
+    return null;
+  }
 
   // Step 3: AI selection + reply generation
   let tweetId: string;
