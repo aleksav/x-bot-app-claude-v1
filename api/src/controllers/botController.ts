@@ -163,7 +163,10 @@ export const botController = {
             if (post) {
               posts.push(post);
             } else {
-              errors.push('Like post generation failed');
+              console.error(
+                `Like post generation returned null for bot ${bot.id} (attempt ${i + 1}/${count})`,
+              );
+              errors.push('Like post generation failed — check server logs for details');
             }
           } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Like post generation error';
@@ -287,7 +290,12 @@ export const botController = {
           behaviour,
         );
         if (!post) {
-          res.status(500).json({ error: 'Like post generation failed' });
+          console.error(
+            `Like post generation returned null for bot ${bot.id}, behaviour ${behaviourId}`,
+          );
+          res
+            .status(500)
+            .json({ error: 'Like post generation failed — check server logs for details' });
           return;
         }
         res.status(201).json({ data: { post } });
