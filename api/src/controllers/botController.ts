@@ -361,9 +361,19 @@ export const botController = {
         checkAndFlagPost(post.id).catch(console.error);
         res.status(201).json({ data: { post } });
       } else {
+        console.error(
+          `generateDraftForBehaviour failed for bot ${bot.id}, behaviour ${behaviourId}: ${result.error}`,
+        );
         res.status(500).json({ error: result.error || 'Generation failed' });
       }
     } catch (err) {
+      console.error(
+        `generateDraftForBehaviour error for params ${JSON.stringify(req.params)}:`,
+        err instanceof Error ? err.message : err,
+      );
+      if (err instanceof Error) {
+        console.error(err.stack);
+      }
       next(err);
     }
   },

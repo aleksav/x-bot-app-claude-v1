@@ -3,7 +3,19 @@ import { ZodError } from 'zod';
 import { AppError } from '../utils/errors.js';
 import { config } from '../config/index.js';
 
-export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
+function logError(err: Error, req: Request): void {
+  const body = req.body ? JSON.stringify(req.body).slice(0, 500) : '';
+  console.error(
+    `[ERROR] ${req.method} ${req.originalUrl}`,
+    `| message: ${err.message}`,
+    `| body: ${body}`,
+  );
+  console.error(err.stack ?? err);
+}
+
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
+  logError(err, req);
+
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: err.code,
@@ -31,8 +43,6 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     });
     return;
   }
-
-  console.error('Unhandled error:', err);
 
   res.status(500).json({
     error: 'INTERNAL_SERVER_ERROR',
