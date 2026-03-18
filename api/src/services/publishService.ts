@@ -108,15 +108,19 @@ export async function handleReplyToPostPublish(
     }
   }
 
-  // Check if we should also like the post
-  let alsoLike = false;
-  if (post.metadata) {
-    try {
-      const meta = JSON.parse(post.metadata);
-      alsoLike = meta.alsoLike === true;
-    } catch {
-      // ignore
+  // Always like the original tweet before replying
+  let likeResult: { success: boolean; error?: string } | undefined;
+  try {
+    likeResult = await likeTweet(replyToTweetId, bot.xAccessToken, bot.xAccessSecret, bot.id);
+    if (likeResult.success) {
+      console.log(`Bot ${bot.xAccountHandle}: liked tweet ${replyToTweetId} before replying`);
+    } else {
+      console.error(
+        `Bot ${bot.xAccountHandle}: failed to like tweet ${replyToTweetId}: ${likeResult.error}`,
+      );
     }
+  } catch (err) {
+    console.error(`Bot ${bot.xAccountHandle}: error liking tweet ${replyToTweetId}:`, err);
   }
 
   const result = await replyTweet(
@@ -131,23 +135,6 @@ export async function handleReplyToPostPublish(
     return { success: false, error: result.error };
   }
 
-  // If alsoLike is set, like the original tweet
-  let likeResult: { success: boolean; error?: string } | undefined;
-  if (alsoLike) {
-    try {
-      likeResult = await likeTweet(replyToTweetId, bot.xAccessToken, bot.xAccessSecret, bot.id);
-      if (likeResult.success) {
-        console.log(`Bot ${bot.xAccountHandle}: liked tweet ${replyToTweetId} alongside reply`);
-      } else {
-        console.error(
-          `Bot ${bot.xAccountHandle}: failed to like tweet ${replyToTweetId}: ${likeResult.error}`,
-        );
-      }
-    } catch (err) {
-      console.error(`Bot ${bot.xAccountHandle}: error liking tweet ${replyToTweetId}:`, err);
-    }
-  }
-
   // Update metadata with publish results
   let updatedMetadata: string | undefined;
   try {
@@ -157,7 +144,7 @@ export async function handleReplyToPostPublish(
       publishResults: {
         publishedTweetId: result.tweetId,
         replyToTweetId,
-        liked: alsoLike ? (likeResult?.success ?? false) : undefined,
+        liked: likeResult?.success ?? false,
       },
     });
   } catch {
