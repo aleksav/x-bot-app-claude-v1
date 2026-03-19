@@ -1,26 +1,25 @@
 import { v4 as uuidv4 } from 'uuid';
 import { jobRepository } from '../repositories/jobRepository.js';
 import { jobConfigRepository } from '../repositories/jobConfigRepository.js';
-import { handleDraftJob } from './draftHandler.js';
-import { handlePublishJob } from './publishHandler.js';
+import { handleSchedulerTick } from './schedulerTickHandler.js';
+import { handlePostGeneration } from './postGenerationHandler.js';
+import { handlePostApprover } from './postApproverHandler.js';
+import { handlePostPublish } from './postPublishHandler.js';
 import { handleCleanupJob } from './cleanupHandler.js';
 import { log } from './activityLog.js';
 
 const POLL_INTERVAL_MS = parseInt(process.env.WORKER_POLL_INTERVAL_MS || '30000', 10);
 
-// Hardcoded fallback intervals (used when DB lookup fails)
-const DRAFT_INTERVAL_MS = parseInt(process.env.DRAFT_JOB_INTERVAL_MS || '120000', 10); // 2 min
-const PUBLISH_INTERVAL_MS = parseInt(process.env.PUBLISH_JOB_INTERVAL_MS || '60000', 10); // 1 min
-const CLEANUP_INTERVAL_MS = parseInt(
-  process.env.CLEANUP_JOB_INTERVAL_MS || String(3 * 60 * 60 * 1000),
-  10,
-); // 3 hours
-
 const FALLBACK_INTERVALS: Record<string, number> = {
-  draft: DRAFT_INTERVAL_MS,
-  publish: PUBLISH_INTERVAL_MS,
-  cleanup: CLEANUP_INTERVAL_MS,
+  'scheduler-tick': 15 * 60 * 1000, // 15 min
+  'post-generation': 0, // on-demand, no recurring
+  'post-approver': 15 * 60 * 1000, // 15 min
+  'post-publish': 0, // on-demand, no recurring
+  cleanup: 6 * 60 * 60 * 1000, // 6 hours
 };
+
+// Recurring job types that self-reschedule after completion
+const RECURRING_JOB_TYPES = ['scheduler-tick', 'post-approver', 'cleanup'];
 
 // Simple in-memory cache with 5-minute TTL
 const jobConfigCache = new Map<
@@ -56,19 +55,24 @@ async function getCachedJobConfig(
 }
 
 const JOB_HANDLERS: Record<string, (jobId: string) => Promise<void>> = {
-  draft: handleDraftJob,
-  publish: handlePublishJob,
+  'scheduler-tick': handleSchedulerTick,
+  'post-generation': handlePostGeneration,
+  'post-approver': handlePostApprover,
+  'post-publish': handlePostPublish,
   cleanup: handleCleanupJob,
+  // Backward compat for old job types that may still be pending
+  draft: handlePostGeneration,
+  publish: handlePostPublish,
 };
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 let running = false;
 
 /**
- * Ensures a pending job exists for each type on startup.
+ * Ensures a pending job exists for each recurring type on startup.
  */
 async function ensureInitialJobs(): Promise<void> {
-  for (const type of Object.keys(JOB_HANDLERS)) {
+  for (const type of RECURRING_JOB_TYPES) {
     try {
       await jobRepository.ensureJobExists(type, new Date());
       log('dispatcher', `Ensured ${type} job exists`);
@@ -80,9 +84,12 @@ async function ensureInitialJobs(): Promise<void> {
 
 /**
  * Schedules the next job of the given type after completion.
- * Fetches interval from DB (with cache), skips if job type is disabled.
+ * Only recurring job types self-reschedule; on-demand types do not.
  */
 async function scheduleNextJob(type: string): Promise<void> {
+  // On-demand jobs don't self-reschedule
+  if (!RECURRING_JOB_TYPES.includes(type)) return;
+
   const config = await getCachedJobConfig(type);
 
   if (!config.enabled) {
