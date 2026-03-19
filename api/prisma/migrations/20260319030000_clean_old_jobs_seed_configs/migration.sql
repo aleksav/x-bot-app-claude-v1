@@ -1,3 +1,6 @@
+-- Detach posts from old jobs before deleting
+UPDATE "Post" SET "jobId" = NULL WHERE "jobId" IS NOT NULL;
+
 -- Delete all old jobs (clean slate for new job architecture)
 DELETE FROM "Job";
 
