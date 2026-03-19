@@ -23,7 +23,7 @@ export const jobRepository = {
   async createInTransaction(
     tx: TransactionClient,
     data: {
-      type?: string;
+      type: string;
       botId?: string;
       scheduledAt: Date;
       status?: string;
@@ -33,7 +33,7 @@ export const jobRepository = {
   ) {
     return tx.job.create({
       data: {
-        type: data.type || 'draft',
+        type: data.type,
         botId: data.botId ?? null,
         scheduledAt: data.scheduledAt,
         status: data.status || 'pending',
@@ -44,7 +44,7 @@ export const jobRepository = {
   },
 
   async create(data: {
-    type?: string;
+    type: string;
     botId?: string | null;
     scheduledAt: Date;
     status?: string;
@@ -53,7 +53,7 @@ export const jobRepository = {
   }) {
     return prisma.job.create({
       data: {
-        type: data.type || 'draft',
+        type: data.type,
         botId: data.botId ?? null,
         scheduledAt: data.scheduledAt,
         status: data.status || 'pending',

@@ -115,7 +115,7 @@ model BotBehaviour {
 
 model Job {
   id             String    @id @default(uuid()) @db.Uuid
-  type           String    @default("draft")
+  type           String
   botId          String?   @db.Uuid
   status         String    @default("pending")
   lockToken      String?   @db.Uuid
