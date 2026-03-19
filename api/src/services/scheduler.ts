@@ -1,65 +1,120 @@
-export type ScheduleConfig = {
+export type BotScheduleConfig = {
   postsPerDay: number;
   minIntervalHours: number;
-  preferredHoursStart: number;
-  preferredHoursEnd: number;
+  preferredHoursStart: number; // 0-23
+  preferredHoursEnd: number; // 1-24
+  timezone: string; // IANA timezone e.g. "America/New_York"
 };
 
-export function computeNextScheduledAt(config: ScheduleConfig, completedAt: Date): Date {
-  const { postsPerDay, minIntervalHours, preferredHoursStart, preferredHoursEnd } = config;
+export type PostingContext = {
+  lastPublishedOrScheduledAt: Date | null;
+  publishedTodayCount: number;
+  approvedTodayCount: number;
+};
 
-  // Base interval in hours
-  const baseIntervalHours = 24 / postsPerDay;
+/**
+ * Returns the fractional hour (e.g., 14.5 for 2:30 PM) in the given timezone.
+ */
+function getLocalHour(date: Date, timezone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
 
-  // Apply ±10% random jitter
-  const jitterFactor = 0.9 + Math.random() * 0.2;
-  let intervalHours = baseIntervalHours * jitterFactor;
-
-  // Floor at minIntervalHours
-  if (intervalHours < minIntervalHours) {
-    intervalHours = minIntervalHours;
-  }
-
-  const next = new Date(completedAt.getTime() + intervalHours * 60 * 60 * 1000);
-
-  // No window constraint if start=0 and end=24
-  if (preferredHoursStart === 0 && preferredHoursEnd === 24) {
-    return next;
-  }
-
-  const windowSize = preferredHoursEnd - preferredHoursStart;
-
-  // If window too narrow (less than minIntervalHours), we need to handle carefully
-  if (windowSize <= 0) {
-    // Invalid window — skip to next day's window start
-    return advanceToWindowStart(next, preferredHoursStart, 1);
-  }
-
-  const nextHour = next.getUTCHours() + next.getUTCMinutes() / 60;
-
-  if (nextHour >= preferredHoursStart && nextHour < preferredHoursEnd) {
-    // Already within the preferred window
-    return next;
-  }
-
-  if (nextHour < preferredHoursStart) {
-    // Before window — advance to window start same day
-    return setUtcHour(next, preferredHoursStart);
-  }
-
-  // After window — skip to next day's window start
-  return advanceToWindowStart(next, preferredHoursStart, 1);
+  const hour = parseInt(parts.find((p) => p.type === 'hour')!.value, 10);
+  const minute = parseInt(parts.find((p) => p.type === 'minute')!.value, 10);
+  // Intl may return hour=24 for midnight in some locales; normalize to 0
+  const normalizedHour = hour === 24 ? 0 : hour;
+  return normalizedHour + minute / 60;
 }
 
-function setUtcHour(date: Date, hour: number): Date {
-  const result = new Date(date);
-  result.setUTCHours(Math.floor(hour), Math.round((hour % 1) * 60), 0, 0);
-  return result;
+/**
+ * Returns a YYYY-MM-DD string for the given date in the given timezone.
+ */
+function getLocalDateString(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
 }
 
-function advanceToWindowStart(date: Date, windowStartHour: number, daysToAdd: number): Date {
-  const result = new Date(date);
-  result.setUTCDate(result.getUTCDate() + daysToAdd);
-  result.setUTCHours(Math.floor(windowStartHour), Math.round((windowStartHour % 1) * 60), 0, 0);
-  return result;
+/**
+ * Scans forward from NOW() in 1-hour increments to find the first valid slot.
+ * Returns null if no valid slot found within searchWindowHours.
+ */
+export function findNextScheduledSlot(
+  config: BotScheduleConfig,
+  context: PostingContext,
+  searchWindowHours: number,
+): Date | null {
+  const { postsPerDay, minIntervalHours, preferredHoursStart, preferredHoursEnd, timezone } =
+    config;
+  const { lastPublishedOrScheduledAt, publishedTodayCount, approvedTodayCount } = context;
+
+  const now = new Date();
+  const todayStr = getLocalDateString(now, timezone);
+
+  // Compute jitter factors once per call
+  const windowJitterFactor = 0.9 + Math.random() * 0.2;
+  const gapJitterFactor = 0.9 + Math.random() * 0.2;
+  const capJitterFactor = 0.9 + Math.random() * 0.2;
+
+  // Jittered min interval in milliseconds
+  const jitteredMinIntervalMs = minIntervalHours * gapJitterFactor * 60 * 60 * 1000;
+
+  // Jittered daily cap
+  const jitteredCap = Math.max(1, Math.round(postsPerDay * capJitterFactor));
+
+  // Jittered allowed-hours window
+  const windowWidth = preferredHoursEnd - preferredHoursStart; // in hours
+  const allHoursAllowed = preferredHoursStart === 0 && preferredHoursEnd === 24;
+
+  let jitteredStart = preferredHoursStart;
+  let jitteredEnd = preferredHoursEnd;
+
+  if (!allHoursAllowed) {
+    const windowMinutes = windowWidth * 60;
+    const jitteredWindowMinutes = windowMinutes * windowJitterFactor;
+    const deltaMinutes = (jitteredWindowMinutes - windowMinutes) / 2;
+    jitteredStart = preferredHoursStart - deltaMinutes / 60;
+    jitteredEnd = preferredHoursEnd + deltaMinutes / 60;
+  }
+
+  for (let i = 0; i <= searchWindowHours; i++) {
+    const candidate = new Date(now.getTime() + i * 60 * 60 * 1000);
+
+    // 1. Allowed hours check
+    if (!allHoursAllowed) {
+      const localHour = getLocalHour(candidate, timezone);
+      if (localHour < jitteredStart || localHour >= jitteredEnd) {
+        continue;
+      }
+    }
+
+    // 2. Min gap check
+    if (lastPublishedOrScheduledAt) {
+      const gap = candidate.getTime() - lastPublishedOrScheduledAt.getTime();
+      if (gap < jitteredMinIntervalMs) {
+        continue;
+      }
+    }
+
+    // 3. Daily cap check
+    const candidateDayStr = getLocalDateString(candidate, timezone);
+    const isToday = candidateDayStr === todayStr;
+    const dailyCount = isToday ? publishedTodayCount + approvedTodayCount : 0;
+    if (dailyCount >= jitteredCap) {
+      continue;
+    }
+
+    // All checks passed — apply ±5 minute random offset
+    const offsetMs = (Math.random() * 10 - 5) * 60 * 1000;
+    return new Date(candidate.getTime() + offsetMs);
+  }
+
+  return null;
 }
