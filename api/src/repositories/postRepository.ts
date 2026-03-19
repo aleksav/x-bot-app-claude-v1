@@ -80,27 +80,6 @@ export const postRepository = {
     return { posts, total };
   },
 
-  async findByStatus(status: string, limit = 50) {
-    return prisma.post.findMany({
-      where: { status },
-      take: limit,
-      orderBy: { scheduledAt: 'asc' },
-    });
-  },
-
-  async findApprovedScheduledReady(limit = 50) {
-    return prisma.post.findMany({
-      where: {
-        status: 'approved',
-        scheduledAt: { lte: new Date() },
-        bot: { user: { archivedAt: null } },
-      },
-      take: limit,
-      orderBy: { scheduledAt: 'asc' },
-      include: { bot: true },
-    });
-  },
-
   async findLastPublishedByBot(botId: string) {
     return prisma.post.findFirst({
       where: {
@@ -110,23 +89,6 @@ export const postRepository = {
       },
       orderBy: { publishedAt: 'desc' },
       select: { publishedAt: true },
-    });
-  },
-
-  async findApprovedReady(limit = 50) {
-    return prisma.post.findMany({
-      where: {
-        status: 'approved',
-        flagged: false,
-        bot: {
-          postMode: 'with-approval',
-          active: true,
-          user: { archivedAt: null },
-        },
-      },
-      take: limit,
-      orderBy: { createdAt: 'asc' },
-      include: { bot: true },
     });
   },
 
@@ -155,31 +117,6 @@ export const postRepository = {
         botId,
         status: 'published',
         publishedAt: { gte: since },
-      },
-    });
-  },
-
-  async countRecentByBot(botId: string, hoursBack = 24) {
-    const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
-    return prisma.post.count({
-      where: {
-        botId,
-        createdAt: { gte: since },
-        status: { in: ['draft', 'published', 'approved'] },
-      },
-    });
-  },
-
-  async updateStatus(
-    id: string,
-    status: string,
-    extra?: { publishedAt?: Date; scheduledAt?: Date },
-  ) {
-    return prisma.post.update({
-      where: { id },
-      data: {
-        status,
-        ...extra,
       },
     });
   },

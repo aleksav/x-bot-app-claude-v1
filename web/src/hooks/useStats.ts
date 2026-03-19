@@ -12,7 +12,7 @@ export type BotStats = {
   postsByStatus: {
     draft: number;
     approved: number;
-    scheduled: number;
+    failed: number;
     published: number;
     discarded: number;
   };

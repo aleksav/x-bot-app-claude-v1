@@ -215,21 +215,21 @@ export default function DashboardBPage() {
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <ScheduleIcon color="primary" fontSize="small" />
-                  <Typography variant="subtitle2">Next Scheduled</Typography>
+                  <Typography variant="subtitle2">Approved & Waiting</Typography>
                 </Box>
                 {statsData ? (
-                  statsData.postsByStatus.scheduled > 0 ? (
-                    <Typography variant="h4">{statsData.postsByStatus.scheduled}</Typography>
+                  statsData.postsByStatus.approved > 0 ? (
+                    <Typography variant="h4">{statsData.postsByStatus.approved}</Typography>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      No scheduled posts
+                      No approved posts waiting
                     </Typography>
                   )
                 ) : (
                   <Skeleton width={60} height={40} />
                 )}
                 <Typography variant="caption" color="text.secondary">
-                  {statsData ? `${statsData.postsByStatus.approved} approved, waiting` : ''}
+                  {statsData ? `${statsData.postsByStatus.draft} drafts pending` : ''}
                 </Typography>
               </CardContent>
             </Card>

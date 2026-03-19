@@ -71,7 +71,7 @@ async function main() {
 
   const job1 = await prisma.job.create({
     data: {
-      type: 'draft',
+      type: 'post-generation',
       status: 'completed',
       scheduledAt: oneHourAgo,
       startedAt: oneHourAgo,
@@ -81,7 +81,7 @@ async function main() {
 
   const job2 = await prisma.job.create({
     data: {
-      type: 'draft',
+      type: 'post-generation',
       status: 'pending',
       scheduledAt: oneHourFromNow,
     },
@@ -89,7 +89,7 @@ async function main() {
 
   const job3 = await prisma.job.create({
     data: {
-      type: 'publish',
+      type: 'post-publish',
       status: 'pending',
       scheduledAt: twoHoursFromNow,
     },

@@ -713,7 +713,7 @@ function DashboardAPage() {
               {(
                 [
                   { label: 'Draft', value: String(statsData.postsByStatus.draft) },
-                  { label: 'Scheduled', value: String(statsData.postsByStatus.scheduled) },
+                  { label: 'Failed', value: String(statsData.postsByStatus.failed) },
                   { label: 'Approved', value: String(statsData.postsByStatus.approved) },
                   { label: 'Published', value: String(statsData.postsByStatus.published) },
                   { label: 'Discarded', value: String(statsData.postsByStatus.discarded) },
