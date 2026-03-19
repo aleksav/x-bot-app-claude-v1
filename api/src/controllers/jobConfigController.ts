@@ -4,6 +4,7 @@ import { jobConfigRepository } from '../repositories/jobConfigRepository.js';
 import { userRepository } from '../repositories/userRepository.js';
 import { uuidSchema } from '../utils/validation.js';
 import { ForbiddenError, NotFoundError } from '../utils/errors.js';
+import { invalidateJobConfigCache } from '../worker/jobDispatcher.js';
 
 const idParamSchema = z.object({
   id: uuidSchema,
@@ -49,6 +50,7 @@ export const jobConfigController = {
       }
 
       const config = await jobConfigRepository.update(id, body);
+      invalidateJobConfigCache(found.jobType);
       res.status(200).json({ data: config });
     } catch (err) {
       next(err);
