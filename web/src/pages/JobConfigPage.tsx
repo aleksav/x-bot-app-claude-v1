@@ -41,6 +41,18 @@ function formatInterval(ms: number): string {
   return hours === 1 ? '1 hour' : `${hours} hours`;
 }
 
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleString();
+}
+
+function getNextRun(config: JobConfig): string {
+  if (!config.enabled) return '\u2014';
+  if (!config.lastRunAt) return 'Pending';
+  const next = new Date(new Date(config.lastRunAt).getTime() + config.intervalMs);
+  return formatTimestamp(next.toISOString());
+}
+
 export default function JobConfigPage() {
   const { user } = useAuth();
   const isAdmin = user?.isAdmin ?? false;
@@ -143,9 +155,11 @@ export default function JobConfigPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Job Type</TableCell>
+                  <TableCell>Description</TableCell>
                   <TableCell>Interval</TableCell>
                   <TableCell>Enabled</TableCell>
-                  <TableCell>Last Updated</TableCell>
+                  <TableCell>Last Run</TableCell>
+                  <TableCell>Next Run</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -155,6 +169,7 @@ export default function JobConfigPage() {
                     <TableCell>
                       <Chip label={config.jobType} size="small" variant="outlined" />
                     </TableCell>
+                    <TableCell>{config.description ?? '\u2014'}</TableCell>
                     <TableCell>{formatInterval(config.intervalMs)}</TableCell>
                     <TableCell>
                       <Chip
@@ -163,7 +178,10 @@ export default function JobConfigPage() {
                         color={config.enabled ? 'success' : 'default'}
                       />
                     </TableCell>
-                    <TableCell>{new Date(config.updatedAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {config.lastRunAt ? formatTimestamp(config.lastRunAt) : 'Never'}
+                    </TableCell>
+                    <TableCell>{getNextRun(config)}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="Edit">
                         <IconButton size="small" onClick={() => handleOpenEdit(config)}>
@@ -185,6 +203,11 @@ export default function JobConfigPage() {
             {editing && (
               <Box sx={{ mt: 1 }}>
                 <Chip label={editing.jobType} size="small" variant="outlined" sx={{ mb: 2 }} />
+                {editing.description && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {editing.description}
+                  </Typography>
+                )}
                 <TextField
                   label="Interval (minutes)"
                   type="number"

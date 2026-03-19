@@ -6,7 +6,9 @@ export type JobConfig = {
   id: string;
   jobType: string;
   intervalMs: number;
+  description: string | null;
   enabled: boolean;
+  lastRunAt: string | null;
   updatedAt: string;
   createdAt: string;
 };

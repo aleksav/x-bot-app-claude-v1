@@ -60,9 +60,6 @@ const JOB_HANDLERS: Record<string, (jobId: string) => Promise<void>> = {
   'post-approver': handlePostApprover,
   'post-publish': handlePostPublish,
   cleanup: handleCleanupJob,
-  // Backward compat for old job types that may still be pending
-  draft: handlePostGeneration,
-  publish: handlePostPublish,
 };
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
@@ -174,6 +171,14 @@ export function start(): void {
     void processJobs();
     intervalHandle = setInterval(() => void processJobs(), POLL_INTERVAL_MS);
   });
+}
+
+export function invalidateJobConfigCache(jobType?: string): void {
+  if (jobType) {
+    jobConfigCache.delete(jobType);
+  } else {
+    jobConfigCache.clear();
+  }
 }
 
 export function stop(): void {
