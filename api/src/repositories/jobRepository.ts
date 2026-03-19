@@ -22,7 +22,14 @@ type JobRow = {
 export const jobRepository = {
   async createInTransaction(
     tx: TransactionClient,
-    data: { type?: string; botId?: string; scheduledAt: Date; status?: string },
+    data: {
+      type?: string;
+      botId?: string;
+      scheduledAt: Date;
+      status?: string;
+      payload?: string | null;
+      idempotencyKey?: string | null;
+    },
   ) {
     return tx.job.create({
       data: {
@@ -30,19 +37,63 @@ export const jobRepository = {
         botId: data.botId ?? null,
         scheduledAt: data.scheduledAt,
         status: data.status || 'pending',
+        payload: data.payload ?? null,
+        idempotencyKey: data.idempotencyKey ?? null,
       },
     });
   },
 
-  async create(data: { type?: string; botId?: string | null; scheduledAt: Date; status?: string }) {
+  async create(data: {
+    type?: string;
+    botId?: string | null;
+    scheduledAt: Date;
+    status?: string;
+    payload?: string | null;
+    idempotencyKey?: string | null;
+  }) {
     return prisma.job.create({
       data: {
         type: data.type || 'draft',
         botId: data.botId ?? null,
         scheduledAt: data.scheduledAt,
         status: data.status || 'pending',
+        payload: data.payload ?? null,
+        idempotencyKey: data.idempotencyKey ?? null,
       },
     });
+  },
+
+  async createIdempotent(data: {
+    type: string;
+    botId: string;
+    scheduledAt: Date;
+    payload?: string | null;
+    idempotencyKey: string;
+  }): Promise<boolean> {
+    try {
+      await prisma.job.create({
+        data: {
+          type: data.type,
+          botId: data.botId,
+          scheduledAt: data.scheduledAt,
+          status: 'pending',
+          payload: data.payload ?? null,
+          idempotencyKey: data.idempotencyKey,
+        },
+      });
+      return true;
+    } catch (err: unknown) {
+      // Unique constraint violation = already exists, that's fine
+      if (
+        err &&
+        typeof err === 'object' &&
+        'code' in err &&
+        (err as { code: string }).code === 'P2002'
+      ) {
+        return false;
+      }
+      throw err;
+    }
   },
 
   async findPendingJobs(limit = 10) {
@@ -187,7 +238,13 @@ export const jobRepository = {
   },
 
   async getLastCompletedByType() {
-    const types = ['draft', 'publish', 'cleanup'] as const;
+    const types = [
+      'scheduler-tick',
+      'post-generation',
+      'post-approver',
+      'post-publish',
+      'cleanup',
+    ] as const;
     const results: Record<string, Date | null> = {};
     for (const type of types) {
       const job = await prisma.job.findFirst({
@@ -201,7 +258,13 @@ export const jobRepository = {
   },
 
   async getNextPendingByType() {
-    const types = ['draft', 'publish', 'cleanup'] as const;
+    const types = [
+      'scheduler-tick',
+      'post-generation',
+      'post-approver',
+      'post-publish',
+      'cleanup',
+    ] as const;
     const results: Record<string, Date | null> = {};
     for (const type of types) {
       const job = await prisma.job.findFirst({

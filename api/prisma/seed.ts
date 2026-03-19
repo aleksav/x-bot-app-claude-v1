@@ -246,21 +246,21 @@ The actual revised tweet text here`,
 
   // Seed job configs (upsert to avoid duplicates)
   await prisma.jobConfig.upsert({
-    where: { jobType: 'draft' },
+    where: { jobType: 'scheduler-tick' },
     update: {},
-    create: { jobType: 'draft', intervalMs: 120000, enabled: true },
+    create: { jobType: 'scheduler-tick', intervalMs: 900000, enabled: true },
   });
 
   await prisma.jobConfig.upsert({
-    where: { jobType: 'publish' },
+    where: { jobType: 'post-approver' },
     update: {},
-    create: { jobType: 'publish', intervalMs: 60000, enabled: true },
+    create: { jobType: 'post-approver', intervalMs: 900000, enabled: true },
   });
 
   await prisma.jobConfig.upsert({
     where: { jobType: 'cleanup' },
     update: {},
-    create: { jobType: 'cleanup', intervalMs: 10800000, enabled: true },
+    create: { jobType: 'cleanup', intervalMs: 21600000, enabled: true },
   });
 
   console.log('Seed data created successfully:');
