@@ -25,7 +25,6 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FlagIcon from '@mui/icons-material/Flag';
 import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag';
-import RateReviewIcon from '@mui/icons-material/RateReview';
 import RestoreIcon from '@mui/icons-material/Restore';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { AxiosError } from 'axios';
@@ -709,11 +708,13 @@ export default function PostQueueBPage() {
                                   'Ask Judges'
                                 )}
                               </Button>
-                              <Tooltip title="Evaluate">
-                                <IconButton size="small" onClick={() => setEvaluatePostId(post.id)}>
-                                  <RateReviewIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => setEvaluatePostId(post.id)}
+                              >
+                                Evaluate
+                              </Button>
                               <Button
                                 size="small"
                                 variant="contained"
@@ -777,11 +778,13 @@ export default function PostQueueBPage() {
                           )}
                           {post.status === 'approved' && (
                             <>
-                              <Tooltip title="Evaluate">
-                                <IconButton size="small" onClick={() => setEvaluatePostId(post.id)}>
-                                  <RateReviewIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => setEvaluatePostId(post.id)}
+                              >
+                                Evaluate
+                              </Button>
                               <Button
                                 size="small"
                                 variant="contained"
