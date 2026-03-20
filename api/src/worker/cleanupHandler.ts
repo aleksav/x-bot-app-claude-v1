@@ -39,8 +39,15 @@ export async function handleCleanupJob(_jobId: string): Promise<string> {
 
   // 3. Hard-delete old completed/failed/cancelled jobs
   const result = await jobRepository.deleteOldJobs(RETENTION_DAYS);
-  log('cleanup', `Deleted ${result.count} old job(s)`);
 
-  const message = `Expired ${expiredDrafts.count} draft(s), deleted ${oldDiscarded.length} discarded post(s), deleted ${result.count} old job(s)`;
+  // 4. Hard-delete API logs older than 90 days
+  const apiLogCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const apiLogResult = await prisma.apiLog.deleteMany({
+    where: { createdAt: { lt: apiLogCutoff } },
+  });
+
+  log('cleanup', `Deleted ${result.count} old job(s), ${apiLogResult.count} old API log(s)`);
+
+  const message = `Expired ${expiredDrafts.count} draft(s), deleted ${oldDiscarded.length} discarded post(s), deleted ${result.count} old job(s), deleted ${apiLogResult.count} API log(s)`;
   return message;
 }
