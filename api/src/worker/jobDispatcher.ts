@@ -91,6 +91,12 @@ async function scheduleNextJob(type: string): Promise<void> {
     return;
   }
 
+  // Skip if a job of this type is already pending or running
+  const alreadyQueued = await jobRepository.hasPendingOrRunning(type);
+  if (alreadyQueued) {
+    return;
+  }
+
   const nextScheduledAt = new Date(Date.now() + config.intervalMs);
   await jobRepository.create({
     type,
