@@ -3,6 +3,17 @@ import { prisma } from '../utils/prisma.js';
 
 type TxClient = Prisma.TransactionClient;
 
+function getOrderBy(status?: string) {
+  switch (status) {
+    case 'approved':
+      return [{ scheduledAt: 'asc' as const }, { createdAt: 'desc' as const }];
+    case 'published':
+      return { publishedAt: 'desc' as const };
+    default:
+      return { createdAt: 'desc' as const };
+  }
+}
+
 export const postRepository = {
   async create(data: {
     botId: string;
@@ -43,10 +54,7 @@ export const postRepository = {
       where.status = options.status;
     }
 
-    const orderBy =
-      options.status === 'approved'
-        ? [{ scheduledAt: 'asc' as const }, { createdAt: 'desc' as const }]
-        : { createdAt: 'desc' as const };
+    const orderBy = getOrderBy(options.status);
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
@@ -72,10 +80,7 @@ export const postRepository = {
       where.status = options.status;
     }
 
-    const orderBy =
-      options.status === 'approved'
-        ? [{ scheduledAt: 'asc' as const }, { createdAt: 'desc' as const }]
-        : { createdAt: 'desc' as const };
+    const orderBy = getOrderBy(options.status);
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({

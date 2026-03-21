@@ -96,6 +96,18 @@ function daysUntil(dateStr: string | null): string {
   return `in ${diffDays} days`;
 }
 
+function daysSince(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const now = new Date();
+  const target = new Date(dateStr);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetStart = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const diffDays = Math.round((todayStart.getTime() - targetStart.getTime()) / 86400000);
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  return `${diffDays}d ago`;
+}
+
 function PostReviewsSection({
   postId,
   onDeleteReview,
@@ -371,6 +383,15 @@ export default function PostQueueBPage() {
                           sx={{ whiteSpace: 'nowrap', minWidth: 60, textAlign: 'right' }}
                         >
                           {daysUntil(post.scheduledAt)}
+                        </Typography>
+                      )}
+                      {post.status === 'published' && post.publishedAt && (
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          sx={{ whiteSpace: 'nowrap', minWidth: 60, textAlign: 'right' }}
+                        >
+                          {daysSince(post.publishedAt)}
                         </Typography>
                       )}
                       {/* Hover action icons */}
